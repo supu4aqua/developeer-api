@@ -1,21 +1,24 @@
 {
-  "name": "developeer-api",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "express": "^4.16.4",
-    "mongoose": "^5.3.8"
-  },
-  "devDependencies": {
-    "chai": "^4.2.0",
-    "chai-http": "^4.2.0",
-    "mocha": "^5.2.0"
-  }
+    "name": "developeer-api",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node server.js",
+        "test": "mocha --exit",
+        "dev": "nodemon server.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "express": "^4.16.4",
+        "mongoose": "^5.3.8"
+    },
+    "devDependencies": {
+        "chai": "^4.2.0",
+        "chai-http": "^4.2.0",
+        "mocha": "^5.2.0",
+        "nodemon": "^1.18.5"
+    }
 }
