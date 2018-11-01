@@ -1,5 +1,11 @@
 language: node_js
 node_js: node
-
 services:
 - mongodb
+deploy:
+  provider: heroku
+  api_key:
+    secure: IefdRbANCNDmLpFOq/naAIlXcIcSJUk3HI9cXkqViRA00P8zV8Ut7qyqjMIdFazKEs3J4FArcrSX9ACw3IW5XC8V0zAsFMLkEl5zqE2N6ZkDed3VyMEgwlOyhCP5WRgEbJheb4SMGZ7c49yjaWeVa2k1Ypf17OyvrZMltfWUDEk5KiwIAPtPxpOkgcMwTBRv0RtehDcEm7C1Vtnnb+GrIKirEgYQA/hf5jARi5wsFsL/F3ZYAryE+LWAyHY7YRKhLVCtHs0RYs5HKWYGCfxkKNDHfLuA1WwHGZM0pwI/r4tVhIDrBifUQUB42opzEnrJpnru9dvz/9eAmDACh3QXC6DimjXnZ4QCmIclPObrLD5yjSt0Q4MecwNBcfm+p7lp4AtUtt0i7/FfgAq+NiHcg5SskPaumn7f/sZQUIIPaGCyZwHtz5xd5tTZTCfQrZIqvyPUXd5B9QN7tWWoPUApnr5aM1MS3pSY8UghM6YFu9AAqfWY2BjSBpwsXy8JV44ZWWpf5HCw4i8Zm3ZplCoxfUWfNVgSQN33hvDLm1AgD6F3s67vjU1r5mBh3V6+TcrILbz/ahTXHxgX8J/GpoXIRnNKQvA30xx34jEsV2AGNh4PHeutxUHck8yiR3dEtcXOCxZ9vZVX6yeGoDaKG12FNEaJ1jh/VmKAirSm6GytRdc=
+  app: developeer-api
+  on:
+    repo: fastlain/developeer-api
