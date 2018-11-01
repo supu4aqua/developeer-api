@@ -1,0 +1,1 @@
+exports.CLIENT_ORIGIN = "https://developeer.herokuapp.com/"
