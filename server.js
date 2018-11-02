@@ -75,5 +75,5 @@ if (require.main === module) {
 };
 
 
-// export the app for use in test code
-module.exports = { app };
+// exports for use in test code
+module.exports = { app, runServer, closeServer };
