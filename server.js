@@ -8,6 +8,8 @@ const errorhandler = require('errorhandler');
 const passport = require('passport');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
+// use `useCreateIndex()` instead of deprecated `ensureIndex()`
+mongoose.set('useCreateIndex', true);
 
 // Configuration and Environment variables
 const { CLIENT_ORIGIN, PORT, DATABASE_URL } = require('./config');
