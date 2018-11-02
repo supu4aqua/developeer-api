@@ -5,13 +5,11 @@ const router = express.Router();
 
 const { User } = require('./models');
 
-router.get('/', (req, res) => {
-    res.json({ user: "tempuser" });
-});
+const passport = require('passport');
+const { createAuthToken } = require('../auth/createAuthToken');
 
 // create a new user
 router.post('/', (req, res) => {
-    console.log(req.body);
 
     // check for required fields
     const requiredFields = ['username', 'password'];
@@ -123,6 +121,49 @@ router.post('/', (req, res) => {
                 code: 500,
                 message: 'Internal server error'
             });
+        });
+});
+
+const jwtAuth = passport.authenticate('jwt', { session: false });
+
+// update user (protected endpoint)
+router.put('/:id', jwtAuth, (req, res) => {
+    // check for required fields
+    const requiredFields = ['id', 'username', 'credit'];
+    const missingField = requiredFields.find(field => !(field in req.body));
+    console.log(req.user);
+
+    if (missingField) {
+        return res.status(422).json({
+            code: 422,
+            reason: 'ValidationError',
+            message: 'field missing',
+            location: missingField
+        });
+    }
+
+    // check if params.id is the same as the body.id and req.user.id (from jwtAuth)
+    if (req.params.id !== req.body.id || req.params.id !== req.user.id) {
+        const message = `Request path id (${req.params.id}), request body id (${req.body.id}), and JWT payload user id (${req.user.id}) must match`;
+        console.error(message);
+        return res.status(400).send(message);
+    }
+
+    User.findOne({ _id: req.body.id })
+        .then(user => {
+            console.log(user);
+            user.credit = req.body.credit;
+            user.save();
+            return user;
+        })
+        .then(user => {
+            // create and return a new JWT that reflects the updated user data
+            const authToken = createAuthToken(user.serialize());
+            return res.status(200).json({ authToken });
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({ message: 'Internal server error' });
         });
 });
 
