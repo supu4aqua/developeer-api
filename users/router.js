@@ -131,7 +131,6 @@ router.put('/:id', jwtAuth, (req, res) => {
     // check for required fields
     const requiredFields = ['id', 'username', 'credit'];
     const missingField = requiredFields.find(field => !(field in req.body));
-    console.log(req.user);
 
     if (missingField) {
         return res.status(422).json({
@@ -150,9 +149,33 @@ router.put('/:id', jwtAuth, (req, res) => {
     }
 
     User.findOne({ _id: req.body.id })
+        // FUTURE IMPLEMENTATION: CHECK IF NEW USERNAME IS ALREADY IN DATABASE
+        // .then(user => {
+        //     // check if new username, and if so it it is already in database
+        //     if (req.body.username !== user.username) {
+        //         console.log('name change!');
+        //         return User.find({ username: req.body.username })
+        //             .countDocuments()
+        //             .then(count => {
+        //                 if (count > 0) {
+        //                     // There is an existing user with the same username
+        //                     return Promise.reject({
+        //                         code: 422,
+        //                         reason: 'ValidationError',
+        //                         message: 'already in use',
+        //                         location: 'username'
+        //                     });
+        //                 }
+        //                 return user;
+        //             });
+        //     }
+        //     return user;
+        // })
+
         .then(user => {
-            console.log(user);
             user.credit = req.body.credit;
+            // FUTURE IMPLEMENTATION: UPDATE USERNAME
+            // user.username = req.body.username;
             user.save();
             return user;
         })
@@ -163,7 +186,14 @@ router.put('/:id', jwtAuth, (req, res) => {
         })
         .catch(err => {
             console.error(err);
-            res.status(500).json({ message: 'Internal server error' });
+            // FUTURE IMPLEMENTATION: RESPOND WITH VALIDATION ERROR
+            // if (err.reason === 'ValidationError') {
+            //     return res.status(err.code).json(err);
+            // }
+            res.status(500).json({
+                code: 500,
+                message: 'Internal server error'
+            });
         });
 });
 
