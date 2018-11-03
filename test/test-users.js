@@ -11,8 +11,8 @@ chai.use(chaiHttp);
 
 // import models, server, and configuration variables
 const { User } = require('../users/models');
+const { createAuthToken } = require('../auth/createAuthToken');
 const { app, runServer, closeServer } = require('../server');
-
 const { TEST_DATABASE_URL, JWT_SECRET, JWT_EXPIRY } = require('../config');
 
 // clear test database
@@ -186,5 +186,150 @@ describe('Users API', () => {
                     expect(passwordIsCorrect).to.be.true;
                 });
         });
+    });
+
+    describe('PUT /api/users/:id', () => {
+        it('Should reject unauthorized PUT requests', () => {
+            return chai
+                .request(app)
+                .put(`/api/users/1`)
+                .then(res => {
+                    expect(res).to.have.status(401);
+                });
+        });
+        it('Should reject requests with missing credit', () => {
+            const userData = {
+                username: 'testuserA'
+            };
+            const newUserData = {
+                username: 'testuserB',
+            };
+
+            let token;
+
+            return User.hashPassword('testpassword')
+                .then(password => {
+                    userData.password = password;
+                    return User.create(userData);
+                })
+                .then(user => {
+                    token = createAuthToken(user.serialize());
+                    newUserData.id = user._id;
+
+                    return chai
+                        .request(app)
+                        .put(`/api/users/${newUserData.id}`)
+                        .set('authorization', `Bearer ${token}`)
+                        .send(newUserData);
+                })
+                .then(res => {
+                    expect(res).to.have.status(422);
+                    expect(res.body.reason).to.equal('ValidationError');
+                    expect(res.body.message).to.equal('field missing');
+                    expect(res.body.location).to.equal('credit');
+                });
+        });
+        it.only('Should reject requests with mismatched param id and request body id', () => {
+            const userData = {
+                username: 'testuserA',
+                credit: 5
+            };
+
+            let token;
+
+            return User.hashPassword('testpassword')
+                .then(password => {
+                    userData.password = password;
+                    return User.create(userData);
+                })
+                .then(user => {
+                    token = createAuthToken(user.serialize());
+                    userData.id = user._id;
+
+                    return chai
+                        .request(app)
+                        .put(`/api/users/1234abcd`)
+                        .set('authorization', `Bearer ${token}`)
+                        .send(userData);
+                })
+                .then(res => {
+                    expect(res).to.have.status(400);
+                    console.log(res.body.message);
+                    console.log(`Request path id (1234abcd), request body id (${userData.id}), and JWT payload user id (${userData.id}) must match`);
+                    expect(res.body.message).to.equal(`Request path id (1234abcd), request body id (${userData.id}), and JWT payload user id (${userData.id}) must match`);
+                });
+        });
+        it('Should update user data (excluding username)', () => {
+            const userData = {
+                username: 'testuserA'
+            };
+            const newUserData = {
+                username: 'testuserA',
+                credit: 20
+            };
+
+            let token;
+
+            return User.hashPassword('testpassword')
+                .then(password => {
+                    userData.password = password;
+                    return User.create(userData);
+                })
+                .then(user => {
+                    token = createAuthToken(user.serialize());
+                    newUserData.id = user._id;
+                    return chai
+                        .request(app)
+                        .put(`/api/users/${newUserData.id}`)
+                        .set('authorization', `Bearer ${token}`)
+                        .send(newUserData);
+                })
+                .then(res => {
+                    expect(res).to.have.status(200);
+                    expect(res.body).to.be.an('object');
+                    expect(res.body).to.have.keys('authToken');
+
+                    return User.findOne({ _id: newUserData.id })
+                        .then(user => {
+                            expect(user.credit).to.equal(20);
+                        });
+                });
+        });
+
+
+        // FUTURE IMPLEMENTATION: TEST ONLY IF ALLOWING USERNAME CHANGES
+        // it('Should reject requests with missing username', () => {
+        //     const userData = {
+        //         username: 'testuserA'
+        //     };
+        //     const newUserData = {
+        //         credit: 4,
+        //     };
+
+        //     let token;
+
+        //     return User.hashPassword('testpassword')
+        //         .then(password => {
+        //             userData.password = password;
+        //             return User.create(userData);
+        //         })
+        //         .then(user => {
+        //             token = createAuthToken(user.serialize());
+        //             newUserData.id = user._id;
+
+        //             return chai
+        //                 .request(app)
+        //                 .put(`/api/users/${newUserData.id}`)
+        //                 .set('authorization', `Bearer ${token}`)
+        //                 .send(newUserData);
+        //         })
+        //         .then(res => {
+        //             expect(res).to.have.status(422);
+        //             expect(res.body.reason).to.equal('ValidationError');
+        //             expect(res.body.message).to.equal('field missing');
+        //             expect(res.body.location).to.equal('username');
+        //         });
+        // });
+
     });
 });

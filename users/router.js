@@ -145,7 +145,7 @@ router.put('/:id', jwtAuth, (req, res) => {
     if (req.params.id !== req.body.id || req.params.id !== req.user.id) {
         const message = `Request path id (${req.params.id}), request body id (${req.body.id}), and JWT payload user id (${req.user.id}) must match`;
         console.error(message);
-        return res.status(400).send(message);
+        return res.status(400).json({ message });
     }
 
     User.findOne({ _id: req.body.id })
