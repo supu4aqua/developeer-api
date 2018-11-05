@@ -31,8 +31,12 @@ passport.use(jwtStrategy);
 // Routers
 const usersRouter = require('./users/router');
 const authRouter = require('./auth/router');
+const formsRouter = require('./forms/router');
+const reviewsRouter = require('./reviews/router');
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/forms', formsRouter);
+app.use('/api/reviews', reviewsRouter);
 
 // declare `server` here, assign a value in runServer, and access it in closeServer
 let server;
