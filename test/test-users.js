@@ -229,7 +229,7 @@ describe('Users API', () => {
                     expect(res.body.location).to.equal('credit');
                 });
         });
-        it.only('Should reject requests with mismatched param id and request body id', () => {
+        it('Should reject requests with mismatched param id and request body id', () => {
             const userData = {
                 username: 'testuserA',
                 credit: 5
@@ -254,8 +254,6 @@ describe('Users API', () => {
                 })
                 .then(res => {
                     expect(res).to.have.status(400);
-                    console.log(res.body.message);
-                    console.log(`Request path id (1234abcd), request body id (${userData.id}), and JWT payload user id (${userData.id}) must match`);
                     expect(res.body.message).to.equal(`Request path id (1234abcd), request body id (${userData.id}), and JWT payload user id (${userData.id}) must match`);
                 });
         });
