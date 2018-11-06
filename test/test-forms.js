@@ -21,12 +21,6 @@ const tearDownDb = () => {
     return mongoose.connection.dropDatabase();
 }
 
-// create a dummy user to allow creation of a JWT for testing protected endpoints
-// TODO: check if this is actually necessary
-const seedUser = (userData) => {
-    return User.create(userData);
-}
-
 describe('Forms API', () => {
     const name = 'Test form 1';
     const projectUrl = 'http://www.google.com';
@@ -56,6 +50,77 @@ describe('Forms API', () => {
 
     afterEach(() => {
         return tearDownDb();
+    });
+
+    describe('GET /api/forms/:id', () => {
+        it('Should reject requests if form id not found in database', () => {
+
+            const token = createAuthToken(userData);
+            return chai.request(app)
+                .get(`/api/forms/000000000000`)
+                .set('authorization', `Bearer ${token}`)
+                .then(res => {
+                    expect(res).to.have.status(404);
+                    expect(res).to.be.json;
+                    expect(res.body).to.be.an('object');
+                    expect(res.body.message).to.equal('Form not found');
+                });
+        });
+
+        it('Should reject requests if form author is not the same as requesting user', () => {
+            let author;
+            let token;
+            let formId;
+            return User.create(userData)
+                .then(user => {
+                    author = ObjectId('000000000000');
+                    userData.id = user.id;
+                    token = createAuthToken(userData);
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                        .then((form) => {
+                            formId = form._id;
+                            return chai.request(app)
+                                .get(`/api/forms/${formId}`)
+                                .set('authorization', `Bearer ${token}`)
+                        })
+                        .then(res => {
+                            expect(res).to.have.status(401);
+                            expect(res.body.message).to.equal(`Form author id (${author}) and JWT payload user id (${userData.id}) must match`);
+                        });
+                });
+        });
+
+        it('Should read form with specified id from database', () => {
+
+            let author;
+            let token;
+            let formId;
+            return User.create(userData)
+                .then(user => {
+                    author = user.id;
+                    userData.id = user.id;
+                    token = createAuthToken(userData);
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                        .then((form) => {
+                            formId = form._id;
+                            return chai.request(app)
+                                .get(`/api/forms/${formId}`)
+                                .set('authorization', `Bearer ${token}`)
+                        })
+                        .then(res => {
+                            expect(res).to.have.status(200);
+                            expect(res).to.be.json;
+                            expect(res.body).to.be.an('object');
+                            expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                            expect(res.body.form._id).to.equal(String(formId));
+                            expect(res.body.form.author).to.equal(author);
+                            expect(res.body.form.name).to.equal(name);
+                            expect(res.body.form.projectUrl).to.equal(projectUrl);
+                            expect(res.body.form.versions[0]).to.include.keys('_id', 'questions', 'date');
+                            expect(res.body.form.versions[0].questions).to.deep.equal(questions);
+                        });
+                });
+        });
     });
 
     describe('POST /api/forms', () => {

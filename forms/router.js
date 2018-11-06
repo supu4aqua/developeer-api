@@ -9,12 +9,33 @@ const ObjectId = mongoose.Types.ObjectId;
 
 const { Form } = require('./models');
 
-// retrieve a form
-router.get('/:id', (req, res) => {
-
-});
-
 const jwtAuth = passport.authenticate('jwt', { session: false });
+
+// retrieve a form by id
+router.get('/:id', jwtAuth, (req, res) => {
+    Form.findOne({ _id: req.params.id })
+        .then(form => {
+            // check if form was found in database
+            if (form === null) {
+                console.error('Form not found');
+                return res.status(404).json({ message: 'Form not found' });
+            }
+
+            // check if req.user.id is the same as the form author id
+            if (String(form.author) !== req.user.id) {
+                const message = `Form author id (${String(form.author)}) and JWT payload user id (${req.user.id}) must match`;
+                return res.status(401).json({ message });
+            }
+            return res.status(200).json({ form })
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({
+                code: 500,
+                message: 'Internal server error'
+            });
+        });
+});
 
 // create a new form
 router.post('/', jwtAuth, (req, res) => {
