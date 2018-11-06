@@ -54,11 +54,12 @@ describe('Forms API', () => {
 
     describe('GET /api/forms/:id', () => {
         it('Should reject requests if form id not found in database', () => {
-
-            const token = createAuthToken(userData);
+            // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
+            //  const token = createAuthToken(userData);
             return chai.request(app)
                 .get(`/api/forms/000000000000`)
-                .set('authorization', `Bearer ${token}`)
+                // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
+                // .set('authorization', `Bearer ${token}`)
                 .then(res => {
                     expect(res).to.have.status(404);
                     expect(res).to.be.json;
@@ -67,45 +68,49 @@ describe('Forms API', () => {
                 });
         });
 
-        it('Should reject requests if form author is not the same as requesting user', () => {
-            let author;
-            let token;
-            let formId;
-            return User.create(userData)
-                .then(user => {
-                    author = ObjectId('000000000000');
-                    userData.id = user.id;
-                    token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
-                        .then((form) => {
-                            formId = form._id;
-                            return chai.request(app)
-                                .get(`/api/forms/${formId}`)
-                                .set('authorization', `Bearer ${token}`)
-                        })
-                        .then(res => {
-                            expect(res).to.have.status(401);
-                            expect(res.body.message).to.equal(`Form author id (${author}) and JWT payload user id (${userData.id}) must match`);
-                        });
-                });
-        });
+        // THIS TEST REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
+        // it('Should reject requests if form author is not the same as requesting user', () => {
+        //     let author;
+        //     let token;
+        //     let formId;
+        //     return User.create(userData)
+        //         .then(user => {
+        //             author = ObjectId('000000000000');
+        //             userData.id = user.id;
+        //             token = createAuthToken(userData);
+        //             return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+        //                 .then((form) => {
+        //                     formId = form._id;
+        //                     return chai.request(app)
+        //                         .get(`/api/forms/${formId}`)
+        //                         .set('authorization', `Bearer ${token}`)
+        //                 })
+        //                 .then(res => {
+        //                     expect(res).to.have.status(401);
+        //                     expect(res.body.message).to.equal(`Form author id (${author}) and JWT payload user id (${userData.id}) must match`);
+        //                 });
+        //         });
+        // });
 
         it('Should read form with specified id from database', () => {
 
             let author;
-            let token;
+            // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
+            //  let token;
             let formId;
             return User.create(userData)
                 .then(user => {
                     author = user.id;
                     userData.id = user.id;
-                    token = createAuthToken(userData);
+                    // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
+                    // token = createAuthToken(userData);
                     return Form.create({ author: ObjectId(author), name, projectUrl, versions })
                         .then((form) => {
                             formId = form._id;
                             return chai.request(app)
                                 .get(`/api/forms/${formId}`)
-                                .set('authorization', `Bearer ${token}`)
+                            // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
+                            //.set('authorization', `Bearer ${token}`)
                         })
                         .then(res => {
                             expect(res).to.have.status(200);

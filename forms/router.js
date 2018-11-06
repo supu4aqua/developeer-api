@@ -11,8 +11,10 @@ const { Form } = require('./models');
 
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
+
+
 // retrieve a form by id
-router.get('/:id', jwtAuth, (req, res) => {
+router.get('/:id', (req, res) => {
     Form.findOne({ _id: req.params.id })
         .then(form => {
             // check if form was found in database
@@ -20,12 +22,12 @@ router.get('/:id', jwtAuth, (req, res) => {
                 console.error('Form not found');
                 return res.status(404).json({ message: 'Form not found' });
             }
-
+            // THIS CHECK REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
             // check if req.user.id is the same as the form author id
-            if (String(form.author) !== req.user.id) {
-                const message = `Form author id (${String(form.author)}) and JWT payload user id (${req.user.id}) must match`;
-                return res.status(401).json({ message });
-            }
+            // if (String(form.author) !== req.user.id) {
+            //     const message = `Form author id (${String(form.author)}) and JWT payload user id (${req.user.id}) must match`;
+            //     return res.status(401).json({ message });
+            // }
             return res.status(200).json({ form })
         })
         .catch(err => {
