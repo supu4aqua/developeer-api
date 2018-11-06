@@ -72,7 +72,7 @@ router.post('/', jwtAuth, (req, res) => {
         projectUrl: req.body.projectUrl,
         // shareableUrl: '', // TODO: generate shareable urls
         versions: {
-            questions: [req.body.questions]
+            questions: [...req.body.questions]
         }
     }).then(form => {
         return res.status(201).json({ form });
