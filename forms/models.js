@@ -5,7 +5,7 @@ mongoose.Promise = global.Promise;
 
 const VersionSchema = mongoose.Schema({
     questions: [{ type: String }],
-    date: { type: Date }
+    date: { type: Date, default: new Date() }
 });
 
 const FormSchema = mongoose.Schema({
