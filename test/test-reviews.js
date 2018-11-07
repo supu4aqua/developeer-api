@@ -12,6 +12,7 @@ chai.use(chaiHttp);
 const { Review } = require('../reviews/models');
 const { Form } = require('../forms/models');
 const { User } = require('../users/models');
+const { createAuthToken } = require('../auth/createAuthToken');
 const { app, runServer, closeServer } = require('../server');
 const { TEST_DATABASE_URL } = require('../config');
 
@@ -67,14 +68,14 @@ describe('Reviews API', () => {
 
     describe('GET /api/reviews/:id', () => {
         it('Should read review with specified id from database', () => {
-            let userId;
             let formId;
             let formVersion;
             let reviewId;
+            let token;
             return seedUser(userData)
                 .then(user => {
-                    userId = user._id;
-                    return seedForm({ ...testForm, author: userId });
+                    token = createAuthToken({ ...userData, id: user._id });
+                    return seedForm({ ...testForm, author: user._id });
                 })
                 .then(form => {
                     formId = form._id;
@@ -85,6 +86,7 @@ describe('Reviews API', () => {
                     reviewId = review._id;
                     return chai.request(app)
                         .get(`/api/reviews/${String(reviewId)}`)
+                        .set('authorization', `Bearer ${token}`)
                         .then(res => {
                             expect(res).to.have.status(200);
                             expect(res).to.be.json;
@@ -98,9 +100,41 @@ describe('Reviews API', () => {
                         });
                 });
         });
+
+        it('Should reject requests if reviewed form\'s author is not the same as requesting user', () => {
+            let formId;
+            let formVersion;
+            let reviewId;
+            let token;
+            let author;
+            return seedUser(userData)
+                .then(user => {
+                    token = createAuthToken({ ...userData, id: '000000000000' });
+                    author = user._id;
+                    return seedForm({ ...testForm, author });
+                })
+                .then(form => {
+                    formId = form._id;
+                    formVersion = form.versions[0]._id;
+                    return Review.create({ formId, formVersion, responses, reviewerName })
+                })
+                .then(review => {
+                    reviewId = review._id;
+                    return chai.request(app)
+                        .get(`/api/reviews/${String(reviewId)}`)
+                        .set('authorization', `Bearer ${token}`)
+                        .then(res => {
+                            expect(res).to.have.status(401);
+                            expect(res.body.message).to.equal(`Form author id (${author}) and JWT payload user id (000000000000) must match`);
+                        });
+                });
+        });
+
         it('Should reject requests if review id not found in database', () => {
+            const token = createAuthToken(userData);
             return chai.request(app)
                 .get(`/api/reviews/000000000000`)
+                .set('authorization', `Bearer ${token}`)
                 .then(res => {
                     expect(res).to.have.status(404);
                     expect(res).to.be.json;
@@ -136,7 +170,7 @@ describe('Reviews API', () => {
                     expect(res.body.review.reviewerName).to.equal(reviewerName);
                 });
         });
-        it('Should create a new review with reviewerName provided', () => {
+        it('Should create a new review with reviewerId provided', () => {
             let userId;
             let formId;
             let formVersion;

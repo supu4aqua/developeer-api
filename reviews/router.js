@@ -2,30 +2,47 @@
 
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 const ObjectId = mongoose.Types.ObjectId;
 
 const { Review } = require('./models');
+const { Form } = require('../forms/models');
+
+const jwtAuth = passport.authenticate('jwt', { session: false });
 
 // retrieve a review
-router.get('/:id', (req, res) => {
+router.get('/:id', jwtAuth, (req, res) => {
+    let review;
     return Review.findById(req.params.id)
-        .then(review => {
+        .then(_review => {
+            review = _review;
             // check if review was found in database
             if (review === null) {
                 console.error('Review not found');
                 return res.status(404).json({ message: 'Review not found' });
             }
-            return res.status(200).json({ review })
+            console.log(review)
+            return Form.findById(review.formId)
+                .then(form => {
+                    // check if req.user.id is the same as the form author id
+                    if (String(form.author) !== req.user.id) {
+                        const message = `Form author id (${form.author}) and JWT payload user id (${req.user.id}) must match`;
+                        return res.status(401).json({ message });
+                    }
+                    return res.status(200).json({ review })
+                })
+
+                .catch(err => {
+                    console.error(err);
+                    res.status(500).json({
+                        code: 500,
+                        message: 'Internal server error'
+                    });
+                });
+
         })
-        .catch(err => {
-            console.error(err);
-            res.status(500).json({
-                code: 500,
-                message: 'Internal server error'
-            });
-        });
 });
 
 // create a new review
