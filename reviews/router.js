@@ -63,8 +63,8 @@ router.post('/', (req, res) => {
 
     // create new review
     return Review.create({
-        formId: ObjectId(req.formId),
-        formVersion: ObjectId(req.formVersion),
+        formId: ObjectId(req.body.formId),
+        formVersion: ObjectId(req.body.formVersion),
         responses: [...req.body.responses],
         ...reviewer
     }).then(review => {

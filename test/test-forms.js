@@ -682,7 +682,7 @@ describe('Forms API', () => {
         });
     });
 
-    describe.only('DELETE /api/forms/:id', () => {
+    describe('DELETE /api/forms/:id', () => {
         it('Should delete forms with specified id', () => {
 
             let author;
