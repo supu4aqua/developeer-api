@@ -218,7 +218,34 @@ router.put('/:id', jwtAuth, (req, res) => {
 });
 
 // delete a form
-router.delete('/:id', (req, res) => {
+router.delete('/:id', jwtAuth, (req, res) => {
+    const requiredFields = ['id'];
+    const missingField = requiredFields.find(field => !(field in req.body));
+
+    if (missingField) {
+        return res.status(422).json({
+            code: 422,
+            reason: 'ValidationError',
+            message: 'field missing',
+            location: missingField
+        });
+    }
+
+    // check if params.id is the same as the body.id
+    if (req.params.id !== req.body.id) {
+        const message = `Request path id (${req.params.id}) and request body id (${req.body.id}) must match`;
+        console.error(message);
+        return res.status(401).json({ message });
+    }
+
+    return Form.deleteOne({ _id: req.params.id })
+        .then(() => {
+            res.status(204).end();
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(500).json({ message: 'internal server error' });
+        });
 
 });
 

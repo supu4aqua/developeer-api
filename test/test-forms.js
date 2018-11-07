@@ -51,7 +51,7 @@ describe('Forms API', () => {
         return tearDownDb();
     });
 
-    describe.only('GET /api/forms/toreview', () => {
+    describe('GET /api/forms/toreview', () => {
         it('Should return a form with pending requests', () => {
             const forms = [];
             return User.create(userData)
@@ -679,6 +679,85 @@ describe('Forms API', () => {
                                 });
                         });
                 })
+        });
+    });
+
+    describe.only('DELETE /api/forms/:id', () => {
+        it('Should delete forms with specified id', () => {
+
+            let author;
+            let token;
+            let formId;
+            return User.create(userData)
+                .then(user => {
+                    author = user.id;
+                    userData.id = user.id;
+                    token = createAuthToken(userData);
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                        .then((form) => {
+                            formId = form._id;
+                            return chai.request(app)
+                                .delete(`/api/forms/${formId}`)
+                                .set('authorization', `Bearer ${token}`)
+                                .send({ id: formId })
+                                .then(res => {
+                                    expect(res).to.have.status(204);
+                                    return Form.findById(form.id)
+                                        .then((form) => {
+                                            expect(form).to.be.null;
+                                        });
+                                });
+                        });
+                });
+        });
+        it('Should reject requests with missing id', () => {
+
+            let author;
+            let token;
+            let formId;
+            return User.create(userData)
+                .then(user => {
+                    author = user.id;
+                    userData.id = user.id;
+                    token = createAuthToken(userData);
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                        .then((form) => {
+                            formId = form._id;
+                            return chai.request(app)
+                                .delete(`/api/forms/${formId}`)
+                                .set('authorization', `Bearer ${token}`)
+                                .then(res => {
+                                    expect(res).to.have.status(422);
+                                    expect(res.body.reason).to.equal('ValidationError');
+                                    expect(res.body.message).to.equal('field missing');
+                                    expect(res.body.location).to.equal('id');
+                                });
+                        });
+                });
+        });
+        it('Should reject requests if form id in params does not match id in body', () => {
+
+            let author;
+            let token;
+            let formId;
+            return User.create(userData)
+                .then(user => {
+                    author = user.id;
+                    userData.id = user.id;
+                    token = createAuthToken(userData);
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                        .then((form) => {
+                            formId = form._id;
+                            return chai.request(app)
+                                .delete(`/api/forms/${formId}`)
+                                .set('authorization', `Bearer ${token}`)
+                                .send({ id: '000000000000' })
+                                .then(res => {
+                                    expect(res).to.have.status(401);
+                                    expect(res.body.message).to.equal(`Request path id (${formId}) and request body id (000000000000) must match`);
+                                });
+                        });
+                });
         });
     });
 });
