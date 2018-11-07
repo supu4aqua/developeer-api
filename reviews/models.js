@@ -4,11 +4,14 @@ const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
 const ReviewSchema = mongoose.Schema({
-    form: { type: mongoose.Schema.Types.ObjectId, ref: 'Form', required: true },
-    formVersion: { type: mongoose.Schema.Types.ObjectId, required: true }, // TODO: not sure if this has been defined correctly
-    reviewer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    formId: { type: mongoose.Schema.Types.ObjectId, ref: 'Form', required: true },
+    formVersion: { type: mongoose.Schema.Types.ObjectId, required: true },
     responses: [{ type: String }],
-    date: { type: Date, required: true }
+    // reviewerId is used if reviewer is a Developeer user
+    reviewerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    // reviewerName is used if reviewer is NOT a Developeer user
+    reviewerName: { type: String },
+    date: { type: Date, default: new Date() }
 });
 
 const Review = mongoose.model('Review', ReviewSchema);
