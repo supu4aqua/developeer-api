@@ -1,6 +1,5 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 const ObjectId = mongoose.Types.ObjectId;
@@ -14,7 +13,7 @@ const { Form } = require('../forms/models');
 const { User } = require('../users/models');
 const { createAuthToken } = require('../auth/createAuthToken');
 const { app, runServer, closeServer } = require('../server');
-const { TEST_DATABASE_URL, JWT_SECRET, JWT_EXPIRY } = require('../config');
+const { TEST_DATABASE_URL } = require('../config');
 
 // clear test database
 const tearDownDb = () => {
@@ -299,7 +298,7 @@ describe('Forms API', () => {
         });
     });
 
-    describe('PUT /api/forms', () => {
+    describe('PUT /api/forms/:id', () => {
 
         it('Should reject requests with missing id', () => {
             let author;
