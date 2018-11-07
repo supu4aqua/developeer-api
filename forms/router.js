@@ -12,6 +12,29 @@ const { Form } = require('./models');
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
 
+// retrieve random form 
+router.get('/toreview', (req, res) => {
+    // if userId is provided, use as negative filter to avoid reviewing own forms
+    const userId = req.query.userId ? ObjectId(req.query.userId) : null;
+    Form.aggregate([
+        // filter by forms with pending requests
+        { $match: { pendingRequests: { $gt: 0 } } },
+        // then by forms NOT authored by the requesting user
+        { $match: { author: { $ne: userId } } },
+        // and return a single random form
+        { $sample: { size: 1 } }])
+        .then(form => {
+            if (form.length === 0) {
+                return res.status(404).json({ message: 'No forms found' });
+            }
+            return res.status(200).json({ form: form[0] });
+        })
+        .catch(err => {
+            console.error(err);
+            return res.status(500).json({ message: 'Internal server error' });
+        });
+
+});
 
 // retrieve a form by id
 router.get('/:id', (req, res) => {

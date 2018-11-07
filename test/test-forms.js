@@ -52,6 +52,51 @@ describe('Forms API', () => {
         return tearDownDb();
     });
 
+    describe.only('GET /api/forms/toreview', () => {
+        it('Should return a form with pending requests', () => {
+            const forms = [];
+            return User.create(userData)
+                .then(user => {
+                    for (let i = 0; i < 5; i++) {
+                        forms.push({ author: user._id, name, projectUrl, pendingRequests: i });
+                    }
+                    return Form.insertMany(forms)
+                        .then(() => {
+                            return chai.request(app)
+                                .get(`/api/forms/toreview`)
+                                .then(res => {
+                                    expect(res).to.have.status(200);
+                                    expect(res).to.be.json;
+                                    expect(res.body).to.be.an('object');
+                                    expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                                    expect(res.body.form.pendingRequests).to.be.greaterThan(0);
+                                });
+                        });
+                });
+        });
+        it('Should not return form if author is req.query.userId', () => {
+            let author;
+            const forms = [];
+            return User.create(userData)
+                .then(user => {
+                    author = user._id;
+                    for (let i = 0; i < 5; i++) {
+                        forms.push({ author: user._id, name, projectUrl, pendingRequests: i });
+                    }
+                    return Form.insertMany(forms)
+                        .then(() => {
+                            return chai.request(app)
+                                .get(`/api/forms/toreview?userId=${author}`)
+                                .then(res => {
+                                    expect(res).to.have.status(404);
+                                    expect(res.body.message).to.equal('No forms found');
+                                });
+                        });
+                });
+        });
+    });
+
+
     describe('GET /api/forms/:id', () => {
         it('Should reject requests if form id not found in database', () => {
             // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
