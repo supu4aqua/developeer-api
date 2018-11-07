@@ -65,6 +65,51 @@ describe('Reviews API', () => {
         return tearDownDb();
     });
 
+    describe('GET /api/reviews', () => {
+        it('Should read review with specified id from database', () => {
+            let userId;
+            let formId;
+            let formVersion;
+            let reviewId;
+            return seedUser(userData)
+                .then(user => {
+                    userId = user._id;
+                    return seedForm({ ...testForm, author: userId });
+                })
+                .then(form => {
+                    formId = form._id;
+                    formVersion = form.versions[0]._id;
+                    return Review.create({ formId, formVersion, responses, reviewerName })
+                })
+                .then(review => {
+                    reviewId = review._id;
+                    return chai.request(app)
+                        .get(`/api/reviews/${String(reviewId)}`)
+                        .then(res => {
+                            expect(res).to.have.status(200);
+                            expect(res).to.be.json;
+                            expect(res.body).to.be.an('object');
+                            expect(res.body.review).to.include.keys('_id', 'formId', 'formVersion', 'responses', 'date', 'reviewerName');
+                            expect(res.body.review._id).to.equal(String(reviewId));
+                            expect(res.body.review.formId).to.equal(String(formId));
+                            expect(res.body.review.formVersion).to.equal(String(formVersion));
+                            expect(res.body.review.reviewerName).to.equal(reviewerName);
+                            expect(res.body.review.responses).to.deep.equal(responses);
+                        });
+                });
+        });
+        it('Should reject requests if review id not found in database', () => {
+            return chai.request(app)
+                .get(`/api/reviews/000000000000`)
+                .then(res => {
+                    expect(res).to.have.status(404);
+                    expect(res).to.be.json;
+                    expect(res.body).to.be.an('object');
+                    expect(res.body.message).to.equal('Review not found');
+                });
+        });
+    });
+
     describe('POST /api/reviews', () => {
         it('Should create a new review with reviewerName provided', () => {
             let userId;

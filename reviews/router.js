@@ -10,7 +10,22 @@ const { Review } = require('./models');
 
 // retrieve a review
 router.get('/:id', (req, res) => {
-
+    return Review.findById(req.params.id)
+        .then(review => {
+            // check if review was found in database
+            if (review === null) {
+                console.error('Review not found');
+                return res.status(404).json({ message: 'Review not found' });
+            }
+            return res.status(200).json({ review })
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({
+                code: 500,
+                message: 'Internal server error'
+            });
+        });
 });
 
 // create a new review
