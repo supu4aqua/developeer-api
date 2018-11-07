@@ -65,7 +65,7 @@ describe('Reviews API', () => {
         return tearDownDb();
     });
 
-    describe('GET /api/reviews', () => {
+    describe('GET /api/reviews/:id', () => {
         it('Should read review with specified id from database', () => {
             let userId;
             let formId;
