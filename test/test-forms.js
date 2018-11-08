@@ -300,7 +300,7 @@ describe('Forms API', () => {
                             formId = form._id;
                             return User.findById(form.author);
                         }).then(user => {
-                            expect(user.forms[0]).to.deep.equal(formId);
+                            expect(user.forms[0]._id).to.deep.equal(formId);
                         });
                 });
         });
@@ -708,7 +708,7 @@ describe('Forms API', () => {
                             return User.findById(res.body.form.author)
                         })
                         .then(user => {
-                            expect(String(user.forms[0])).to.equal(formId);
+                            expect(String(user.forms[0]._id)).to.equal(formId);
                             return chai.request(app)
                                 .delete(`/api/forms/${formId}`)
                                 .set('authorization', `Bearer ${token}`)

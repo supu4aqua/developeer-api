@@ -8,8 +8,10 @@ const UserSchema = mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     credit: { type: Number, default: 0 },
-    forms: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Form' }]
+    forms: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Form', autopopulate: true }]
 });
+
+UserSchema.plugin(require('mongoose-autopopulate'));
 
 UserSchema.methods.serialize = function () {
     return {
