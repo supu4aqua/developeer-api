@@ -112,7 +112,6 @@ router.post('/', jwtAuth, (req, res) => {
         });
     }
 
-    let form;
     // create new form
     return Form.create({
         author: ObjectId(req.user.id),
@@ -122,14 +121,14 @@ router.post('/', jwtAuth, (req, res) => {
         versions: {
             questions: [...req.body.questions]
         }
-    }).then(_form => {
-        form = _form;
+    }).then(form => {
         // add form id to user's forms
-        User.findByIdAndUpdate(
+        return User.findByIdAndUpdate(
             req.user.id,
-            { $push: { forms: form._id } }
-        ).then(() => {
-            return res.status(201).json({ form });
+            { $push: { forms: form._id } },
+            { new: true }
+        ).then(user => {
+            return res.status(201).json(user.serialize());
         }).catch(err => {
             console.error(err);
             res.status(500).json({ message: 'Internal server error' });
@@ -141,26 +140,19 @@ router.post('/', jwtAuth, (req, res) => {
 });
 
 // update a form
-router.put('/:id', jwtAuth, (req, res) => {
+router.patch('/:id', jwtAuth, (req, res) => {
     // check for required fields
     // note: `id`, `author`, `created`, and `shareableUrl` cannot be updated
-    const requiredFields = ['id', 'name', 'projectUrl', 'pendingRequests', 'questions'];
-    const missingField = requiredFields.find(field => !(field in req.body));
+    const allowedFields = ['name', 'projectUrl', 'pendingRequests', 'questions'];
+    const illegalField = Object.keys(req.body).find(field => !(allowedFields.includes(field)));
 
-    if (missingField) {
+    if (illegalField) {
         return res.status(422).json({
             code: 422,
             reason: 'ValidationError',
-            message: 'field missing',
-            location: missingField
+            message: 'field not allowed',
+            location: illegalField
         });
-    }
-
-    // check if params.id is the same as the body.id
-    if (req.params.id !== req.body.id) {
-        const message = `Request path id (${req.params.id}) and request body id (${req.body.id})`;
-        console.error(message);
-        return res.status(400).json({ message });
     }
 
     // check that string fields are strings
@@ -179,26 +171,28 @@ router.put('/:id', jwtAuth, (req, res) => {
     }
 
     // check that `questions` is an array of strings
-    const isArray = req.body.questions instanceof Array;
-    let isStrings = true;
-    if (isArray) {
-        for (let q of req.body.questions) {
-            if (typeof q != 'string') {
-                isStrings = false;
+    if (req.body.questions) {
+        const isArray = req.body.questions instanceof Array;
+        let isStrings = true;
+        if (isArray) {
+            for (let q of req.body.questions) {
+                if (typeof q != 'string') {
+                    isStrings = false;
+                }
             }
         }
-    }
-    if (!isArray || !isStrings) {
-        return res.status(422).json({
-            code: 422,
-            reason: 'ValidationError',
-            message: 'Incorrect field type: expected array of strings',
-            location: 'questions'
-        });
+        if (!isArray || !isStrings) {
+            return res.status(422).json({
+                code: 422,
+                reason: 'ValidationError',
+                message: 'Incorrect field type: expected array of strings',
+                location: 'questions'
+            });
+        }
     }
 
     // check that `pendingRequests` is a number
-    if (typeof req.body.pendingRequests !== 'number') {
+    if (req.body.pendingRequests && typeof req.body.pendingRequests !== 'number') {
         return res.status(422).json({
             code: 422,
             reason: 'ValidationError',
@@ -207,27 +201,57 @@ router.put('/:id', jwtAuth, (req, res) => {
         });
     }
 
-    Form.findOne({ _id: req.body.id })
+    Form.findById(req.params.id)
         .then(form => {
             // check if req.user.id is the same as the form author id
             if (String(form.author) !== req.user.id) {
-                const message = `Form author id (${form.author}) and JWT payload user id (${req.user.id}) must match`;
-                return res.status(401).json({ message });
+                return Promise.reject(`Unauthorized: Request user id (${req.user.id}) and form author id (${form.author.id}) must match`);
             }
-            // update fields
-            form.name = req.body.name;
-            form.projectUrl = req.body.projectUrl;
-            form.pendingRequests = req.body.pendingRequests;
-            form.versions.push({ questions: req.body.questions, date: new Date() })
-            form.save();
-            return res.status(200).json({ form })
+
+            // update fields, optionally pushing new version if new questions are provided
+            if (req.body.questions) {
+                return Form.findByIdAndUpdate(
+                    req.params.id,
+                    {
+                        $set: { ...req.body },
+                        $push: { versions: { questions: req.body.questions, date: new Date() } }
+                    }
+                );
+            } else {
+                return Form.findByIdAndUpdate(
+                    req.params.id,
+                    {
+                        $set: { ...req.body },
+                    }
+                );
+            }
+        })
+        .then(form => {
+
+            // if form requests changed, change the author's credits accordingly
+            if (req.body.pendingRequests && req.body.pendingRequests !== form.pendingRequests) {
+                const changeCredit = form.pendingRequests - req.body.pendingRequests;
+                return User.findByIdAndUpdate(
+                    req.user.id,
+                    { $inc: { credit: changeCredit } },
+                    { new: true }
+                ).catch(err => {
+                    console.log(err);
+                    return res.status(500).json({ message: 'internal server error' });
+                });
+            } else {
+                return User.findById(req.user.id);
+            }
+        })
+        .then(user => {
+            return res.status(200).json(user.serialize());
         })
         .catch(err => {
             console.error(err);
-            res.status(500).json({
-                code: 500,
-                message: 'Internal server error'
-            });
+            if (err.startsWith('Unauthorized')) {
+                return res.status(401).json({ message: err });
+            }
+            res.status(500).json({ message: 'Internal server error' });
         });
 
 });
