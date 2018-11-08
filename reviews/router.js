@@ -8,6 +8,7 @@ mongoose.Promise = global.Promise;
 const ObjectId = mongoose.Types.ObjectId;
 
 const { Review } = require('./models');
+const { User } = require('../users/models');
 const { Form } = require('../forms/models');
 
 const jwtAuth = passport.authenticate('jwt', { session: false });
@@ -100,7 +101,23 @@ router.post('/', (req, res) => {
         responses: [...req.body.responses],
         ...reviewer
     }).then(review => {
-        return res.status(201).json({ review });
+        // if reviewer was a Devlopeer user, reduce pending requests on form,
+        // then add 1 credit to their account, return user
+        if (review.reviewerId) {
+            Form.findByIdAndUpdate(
+                review.formId,
+                { $inc: { pendingRequests: -1 } }
+            ).then(() => {
+                return User.findByIdAndUpdate(
+                    review.reviewerId,
+                    { $inc: { credit: 1 } },
+                    { new: true }
+                )
+            }).then(user => res.status(200).json(user.serialize()))
+        } else {
+            // if not a developeer user, 
+            res.status(204).end()
+        }
     });
 
 });

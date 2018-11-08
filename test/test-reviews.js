@@ -162,19 +162,24 @@ describe('Reviews API', () => {
                         .send({ formId, formVersion, responses, reviewerName })
                 })
                 .then(res => {
-                    expect(res).to.have.status(201);
-                    expect(res.body.review.reviewerName).to.equal(reviewerName);
-                    expect(res.body.review.responses).to.deep.equal(responses);
-                    expect(res.body.review.formId).to.equal(String(formId));
-                    expect(res.body.review.formVersion).to.equal(String(formVersion));
-                    expect(res.body.review.reviewerName).to.equal(reviewerName);
+                    expect(res).to.have.status(204);
+
+                    return Review.findOne();
+                })
+                .then(review => {
+                    expect(review.reviewerName).to.equal(reviewerName);
+                    expect(review.responses).to.deep.equal(responses);
+                    expect(review.formId).to.deep.equal(formId);
+                    expect(review.formVersion).to.deep.equal(formVersion);
+                    expect(review.reviewerName).to.equal(reviewerName);
                 });
         });
         it('Should create a new review with reviewerId provided', () => {
+
+            let reviewerId;
             let userId;
             let formId;
             let formVersion;
-            let reviewerId;
 
             return seedUser(reviewerUserData)
                 .then(reviewer => {
@@ -192,15 +197,26 @@ describe('Reviews API', () => {
                                 .send({ formId, formVersion, responses, reviewerId })
                         })
                         .then(res => {
-                            expect(res).to.have.status(201);
-                            expect(res.body.review.responses).to.deep.equal(responses);
-                            expect(res.body.review.formId).to.equal(String(formId));
-                            expect(res.body.review.formVersion).to.equal(String(formVersion));
-                            expect(res.body.review.reviewerId).to.equal(String(reviewerId));
+                            expect(res).to.have.status(200);
+                            expect(res.body.id).to.equal(String(reviewerId));
+                            expect(res.body.credit).to.equal(1);
+
+                            return Form.findById(formId)
+                        })
+                        .then(form => {
+                            expect(form.pendingRequests).to.equal(-1);
+
+                            return Review.findOne();
+                        })
+                        .then(review => {
+                            expect(review.responses).to.deep.equal(responses);
+                            expect(String(review.formId)).to.equal(String(formId));
+                            expect(String(review.formVersion)).to.equal(String(formVersion));
+                            expect(String(review.reviewerId)).to.equal(String(reviewerId));
                         });
                 });
         });
-        it('Should create reject requests with missing formId', () => {
+        it('Should reject requests with missing formId', () => {
             let userId;
             let formVersion;
             return seedUser(userData)
