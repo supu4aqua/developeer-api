@@ -115,7 +115,7 @@ router.post('/', (req, res) => {
                 )
             }).then(user => res.status(200).json(user.serialize()))
         } else {
-            // if not a developeer user, 
+            // if not a developeer user, send success w/o content
             res.status(204).end()
         }
     });
