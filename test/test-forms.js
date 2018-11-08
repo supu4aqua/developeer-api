@@ -272,28 +272,36 @@ describe('Forms API', () => {
                 });
         });
         it('Should create a new form', () => {
+            let formId;
+            return User.create(userData)
+                .then(user => {
+                    const token = createAuthToken({ ...userData, id: user._id });
+                    return chai.request(app)
+                        .post('/api/forms')
+                        .set('authorization', `Bearer ${token}`)
+                        .send({ name, projectUrl, questions })
+                        .then(res => {
+                            expect(res).to.have.status(201);
+                            expect(res).to.be.json;
+                            expect(res.body).to.be.an('object');
+                            expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                            expect(res.body.form.name).to.equal(name);
+                            expect(res.body.form.projectUrl).to.equal(projectUrl);
+                            expect(res.body.form.versions[0]).to.include.keys('_id', 'questions', 'date');
+                            expect(res.body.form.versions[0].questions).to.deep.equal(questions);
 
-            const token = createAuthToken(userData);
-            return chai.request(app)
-                .post('/api/forms')
-                .set('authorization', `Bearer ${token}`)
-                .send({ name, projectUrl, questions })
-                .then(res => {
-                    expect(res).to.have.status(201);
-                    expect(res).to.be.json;
-                    expect(res.body).to.be.an('object');
-                    expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
-                    expect(res.body.form.name).to.equal(name);
-                    expect(res.body.form.projectUrl).to.equal(projectUrl);
-                    expect(res.body.form.versions[0]).to.include.keys('_id', 'questions', 'date');
-                    expect(res.body.form.versions[0].questions).to.deep.equal(questions);
+                            return Form.findById(res.body.form._id);
+                        })
+                        .then(form => {
+                            expect(form.name).to.equal(name);
+                            expect(form.projectUrl).to.equal(projectUrl);
+                            expect(form.versions[0].questions).to.deep.equal(questions);
 
-                    return Form.findById(res.body.form._id);
-                })
-                .then(form => {
-                    expect(form.name).to.equal(name);
-                    expect(form.projectUrl).to.equal(projectUrl);
-                    expect(form.versions[0].questions).to.deep.equal(questions);
+                            formId = form._id;
+                            return User.findById(form.author);
+                        }).then(user => {
+                            expect(user.forms[0]).to.deep.equal(formId);
+                        });
                 });
         });
     });
@@ -685,29 +693,35 @@ describe('Forms API', () => {
     describe('DELETE /api/forms/:id', () => {
         it('Should delete forms with specified id', () => {
 
-            let author;
             let token;
             let formId;
             return User.create(userData)
                 .then(user => {
-                    author = user.id;
-                    userData.id = user.id;
-                    token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
-                        .then((form) => {
-                            formId = form._id;
+                    author = user._id;
+                    token = createAuthToken({ ...userData, id: user._id });
+                    return chai.request(app)
+                        .post('/api/forms')
+                        .set('authorization', `Bearer ${token}`)
+                        .send({ name, projectUrl, questions })
+                        .then(res => {
+                            formId = res.body.form._id;
+                            return User.findById(res.body.form.author)
+                        })
+                        .then(user => {
+                            expect(String(user.forms[0])).to.equal(formId);
                             return chai.request(app)
                                 .delete(`/api/forms/${formId}`)
                                 .set('authorization', `Bearer ${token}`)
                                 .send({ id: formId })
                                 .then(res => {
-                                    expect(res).to.have.status(204);
-                                    return Form.findById(form.id)
-                                        .then((form) => {
-                                            expect(form).to.be.null;
-                                        });
+                                    expect(res).to.have.status(200);
+                                    expect(res.body.forms).to.deep.equal([]);
+                                    return Form.findById(formId)
+                                })
+                                .then(form => {
+                                    expect(form).to.be.null;
                                 });
-                        });
+                        })
                 });
         });
         it('Should reject requests with missing id', () => {

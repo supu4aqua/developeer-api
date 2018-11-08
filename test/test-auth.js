@@ -17,6 +17,7 @@ describe('Auth API', () => {
     const username = 'exampleUser';
     const password = 'examplePassword';
     const credit = 0;
+    const forms = [];
     let id = '';
 
     before(() => {
@@ -84,7 +85,8 @@ describe('Auth API', () => {
                     expect(payload.user).to.deep.equal({
                         id,
                         username,
-                        credit
+                        credit,
+                        forms
                     });
                 });
         });

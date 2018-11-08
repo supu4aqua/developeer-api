@@ -7,14 +7,16 @@ mongoose.Promise = global.Promise;
 const UserSchema = mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    credit: { type: Number, default: 0 }
+    credit: { type: Number, default: 0 },
+    forms: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Form' }]
 });
 
 UserSchema.methods.serialize = function () {
     return {
         id: this._id,
         username: this.username,
-        credit: this.credit
+        credit: this.credit,
+        forms: this.forms
     }
 }
 

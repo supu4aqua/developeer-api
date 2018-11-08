@@ -8,6 +8,7 @@ mongoose.Promise = global.Promise;
 const ObjectId = mongoose.Types.ObjectId;
 
 const { Form } = require('./models');
+const { User } = require('../users/models');
 
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
@@ -111,6 +112,7 @@ router.post('/', jwtAuth, (req, res) => {
         });
     }
 
+    let form;
     // create new form
     return Form.create({
         author: ObjectId(req.user.id),
@@ -120,8 +122,21 @@ router.post('/', jwtAuth, (req, res) => {
         versions: {
             questions: [...req.body.questions]
         }
-    }).then(form => {
-        return res.status(201).json({ form });
+    }).then(_form => {
+        form = _form;
+        // add form id to user's forms
+        User.findByIdAndUpdate(
+            req.user.id,
+            { $push: { forms: form._id } }
+        ).then(() => {
+            return res.status(201).json({ form });
+        }).catch(err => {
+            console.error(err);
+            res.status(500).json({ message: 'Internal server error' });
+        });
+    }).catch(err => {
+        console.error(err);
+        res.status(500).json({ message: 'Internal server error' });
     });
 });
 
@@ -238,9 +253,19 @@ router.delete('/:id', jwtAuth, (req, res) => {
         return res.status(401).json({ message });
     }
 
-    return Form.deleteOne({ _id: req.params.id })
-        .then(() => {
-            res.status(204).end();
+    return Form.findByIdAndDelete(req.params.id)
+        .then(form => {
+            // remove form from user's forms
+            return User.findByIdAndUpdate(
+                req.user.id,
+                { $pull: { forms: String(form._id) } },
+                { new: true }
+            ).then(user => {
+                return res.status(200).json(user.serialize());
+            }).catch(err => {
+                console.log(err);
+                return res.status(500).json({ message: 'internal server error' });
+            });
         })
         .catch(err => {
             console.log(err);

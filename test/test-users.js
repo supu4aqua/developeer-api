@@ -170,7 +170,8 @@ describe('Users API', () => {
                     expect(res.body).to.have.keys(
                         'id',
                         'username',
-                        'credit'
+                        'credit',
+                        'forms'
                     );
                     expect(res.body.username).to.equal(username);
                     expect(res.body.credit).to.equal(0);
