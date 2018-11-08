@@ -37,6 +37,28 @@ describe('Users API', () => {
         return tearDownDb();
     });
 
+    describe('GET /api/users/:id', () => {
+        it('Should reject requests if user id not found in database', () => {
+            return chai.request(app)
+                .get(`/api/users/000000000000`)
+                .then(res => {
+                    expect(res).to.have.status(404);
+                    expect(res.body.message).to.equal('User not found');
+                });
+        });
+        it('Should read user with specified id from database', () => {
+            return User.create({ username, password })
+                .then(user => {
+                    return chai.request(app)
+                        .get(`/api/users/${user._id}`)
+                        .then(res => {
+                            expect(res).to.have.status(200);
+                            expect(res.body.username).to.equal(username)
+                        });
+                });
+        });
+    });
+
     describe('POST /api/users', () => {
         it('Should reject requests with a missing username', () => {
             return chai.request(app)

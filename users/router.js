@@ -8,6 +8,24 @@ const { User } = require('./models');
 const passport = require('passport');
 const { createAuthToken } = require('../auth/createAuthToken');
 
+
+// get a user's unprotetced (username)
+router.get('/:id', (req, res) => {
+    User.findById(req.params.id)
+        .then(user => {
+            // check if user was found in database
+            if (user === null) {
+                console.error('User not found');
+                return res.status(404).json({ message: 'User not found' });
+            }
+            return res.status(200).json({ username: user.username })
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({ message: 'Internal server error' });
+        });
+});
+
 // create a new user
 router.post('/', (req, res) => {
 
