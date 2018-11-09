@@ -103,7 +103,7 @@ describe('Users API', () => {
                 .then((res) => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
-                    expect(res.body.message).to.equal('cannot start or end with whitespace');
+                    expect(res.body.message).to.equal('Cannot start or end with whitespace');
                     expect(res.body.location).to.equal('username');
                 });
         });
@@ -115,7 +115,7 @@ describe('Users API', () => {
                 .then((res) => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
-                    expect(res.body.message).to.equal('cannot start or end with whitespace');
+                    expect(res.body.message).to.equal('Cannot start or end with whitespace');
                     expect(res.body.location).to.equal('password');
                 });
         });
@@ -177,7 +177,7 @@ describe('Users API', () => {
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
-                    expect(res.body.message).to.equal('already in use');
+                    expect(res.body.message).to.equal('Already in use');
                     expect(res.body.location).to.equal('username');
                 });
         });

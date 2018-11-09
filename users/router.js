@@ -67,7 +67,7 @@ router.post('/', (req, res) => {
         return res.status(422).json({
             code: 422,
             reason: 'ValidationError',
-            message: 'cannot start or end with whitespace',
+            message: 'Cannot start or end with whitespace',
             location: nonTrimmedField
         });
     }
@@ -113,7 +113,7 @@ router.post('/', (req, res) => {
                 return Promise.reject({
                     code: 422,
                     reason: 'ValidationError',
-                    message: 'already in use',
+                    message: 'Already in use',
                     location: 'username'
                 });
             }
