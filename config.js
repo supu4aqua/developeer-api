@@ -1,4 +1,4 @@
-exports.CLIENT_ORIGIN = "https://developeer.herokuapp.com/";
+exports.CLIENT_ORIGIN = process.env.CLIENT_BASE_URL || "http://localhost:3000";
 exports.DATABASE_URL = process.env.DATABASE_URL ||
     'mongodb://localhost/developeer';
 exports.TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ||
