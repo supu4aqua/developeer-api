@@ -46,6 +46,37 @@ router.get('/:id', jwtAuth, (req, res) => {
         })
 });
 
+// retrieve all reviews for a form
+router.get('/byForm/:formId', jwtAuth, (req, res) => {
+    return Form.findById(req.params.formId)
+        .then(form => {
+            if (form === null) {
+                return Promise.reject('Form not found');
+            }
+
+            // check if req.user.id is the same as the form author id
+            if (String(form.author) !== req.user.id) {
+                return Promise.reject(`Unauthorized: Form author id (${form.author}) and JWT payload user id (${req.user.id}) must match`);
+            }
+
+            return Review.find({ formId: req.params.formId })
+        })
+        .then(reviews => {
+            console.log('reviews');
+            res.status(200).json({ reviews })
+        })
+        .catch(err => {
+            console.error(err);
+            if (err.startsWith('Unauthorized')) {
+                res.status(401).json({ message: err });
+            } else if (err = 'Form not found') {
+                res.status(404).json({ message: err })
+            } else {
+                res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+});
+
 // create a new review
 router.post('/', (req, res) => {
     const requiredFields = ['formId', 'formVersion', 'responses'];

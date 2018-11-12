@@ -144,6 +144,82 @@ describe('Reviews API', () => {
         });
     });
 
+    describe('GET /api/reviews/byForm/:formId', () => {
+        it('Should read reviews with specified formId from database', () => {
+            let formId;
+            let formVersion;
+            let reviewId;
+            let token;
+            return seedUser(userData)
+                .then(user => {
+                    token = createAuthToken({ ...userData, id: user._id });
+                    return seedForm({ ...testForm, author: user._id });
+                })
+                .then(form => {
+                    formId = form._id;
+                    formVersion = form.versions[0]._id;
+                    return Review.create({ formId, formVersion, responses, reviewerName })
+                })
+                .then(review => {
+                    reviewId = review._id;
+                    return chai.request(app)
+                        .get(`/api/reviews/byForm/${String(formId)}`)
+                        .set('authorization', `Bearer ${token}`)
+                        .then(res => {
+                            expect(res).to.have.status(200);
+                            expect(res).to.be.json;
+                            expect(res.body).to.be.an('object');
+                            expect(res.body.reviews[0]).to.include.keys('_id', 'formId', 'formVersion', 'responses', 'date', 'reviewerName');
+                            expect(res.body.reviews[0]._id).to.equal(String(reviewId));
+                            expect(res.body.reviews[0].formId).to.equal(String(formId));
+                            expect(res.body.reviews[0].formVersion).to.equal(String(formVersion));
+                            expect(res.body.reviews[0].reviewerName).to.equal(reviewerName);
+                            expect(res.body.reviews[0].responses).to.deep.equal(responses);
+                        });
+                });
+        });
+
+        it('Should reject requests if form author is not the same as requesting user', () => {
+            let formId;
+            let formVersion;
+            let token;
+            let author;
+            return seedUser(userData)
+                .then(user => {
+                    token = createAuthToken({ ...userData, id: '000000000000' });
+                    author = user._id;
+                    return seedForm({ ...testForm, author });
+                })
+                .then(form => {
+                    formId = form._id;
+                    formVersion = form.versions[0]._id;
+                    return Review.create({ formId, formVersion, responses, reviewerName })
+                })
+                .then(() => {
+                    return chai.request(app)
+                        .get(`/api/reviews/byForm/${String(formId)}`)
+                        .set('authorization', `Bearer ${token}`)
+                        .then(res => {
+                            expect(res).to.have.status(401);
+                            expect(res.body.message).to.equal(`Unauthorized: Form author id (${author}) and JWT payload user id (000000000000) must match`);
+                        });
+                });
+        });
+        it('Should reject requests if form id not found in database', () => {
+            const token = createAuthToken(userData);
+            return chai.request(app)
+                .get(`/api/reviews/byForm/000000000000`)
+                .set('authorization', `Bearer ${token}`)
+                .then(res => {
+                    expect(res).to.have.status(404);
+                    expect(res).to.be.json;
+                    expect(res.body).to.be.an('object');
+                    expect(res.body.message).to.equal('Form not found');
+                });
+        });
+
+    });
+
     describe('POST /api/reviews', () => {
         it('Should create a new review with reviewerName provided', () => {
             let userId;
