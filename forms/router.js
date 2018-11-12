@@ -67,7 +67,7 @@ router.get('/:id', (req, res) => {
 router.post('/', jwtAuth, (req, res) => {
 
     // check for required fields 
-    const requiredFields = ['name', 'projectUrl', 'questions'];
+    const requiredFields = ['name', 'projectUrl', 'questions', 'overview'];
     const missingField = requiredFields.find(field => !(field in req.body));
     if (missingField) {
         return res.status(422).json({
@@ -79,7 +79,7 @@ router.post('/', jwtAuth, (req, res) => {
     }
 
     // check that string fields are strings
-    const stringFields = ['name', 'projectUrl'];
+    const stringFields = ['name', 'projectUrl', 'overview'];
     const nonStringField = stringFields.find(field => {
         return (field in req.body && typeof req.body[field] !== 'string');
     });
@@ -117,6 +117,7 @@ router.post('/', jwtAuth, (req, res) => {
         author: ObjectId(req.user.id),
         name: req.body.name,
         projectUrl: req.body.projectUrl,
+        overview: req.body.overview,
         // shareableUrl: '', // TODO: generate shareable urls
         versions: {
             questions: [...req.body.questions]
@@ -143,7 +144,7 @@ router.post('/', jwtAuth, (req, res) => {
 router.patch('/:id', jwtAuth, (req, res) => {
     // check for required fields
     // note: `id`, `author`, `created`, and `shareableUrl` cannot be updated
-    const allowedFields = ['name', 'projectUrl', 'pendingRequests', 'questions'];
+    const allowedFields = ['name', 'projectUrl', 'pendingRequests', 'questions', 'overview'];
     const illegalField = Object.keys(req.body).find(field => !(allowedFields.includes(field)));
 
     if (illegalField) {
@@ -156,7 +157,7 @@ router.patch('/:id', jwtAuth, (req, res) => {
     }
 
     // check that string fields are strings
-    const stringFields = ['name', 'projectUrl'];
+    const stringFields = ['name', 'projectUrl', 'overview'];
     const nonStringField = stringFields.find(field => {
         return (field in req.body && typeof req.body[field] !== 'string');
     });

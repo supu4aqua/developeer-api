@@ -22,7 +22,8 @@ const testForm = {
     projectUrl: 'http://www.google.com',
     versions: {
         questions: ['Test question 1', 'Test question 2', 'Test question 3']
-    }
+    },
+    overview: 'Test overview'
 }
 const userData = {
     username: 'testuser',

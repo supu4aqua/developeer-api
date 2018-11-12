@@ -24,10 +24,12 @@ describe('Forms API', () => {
     const name = 'Test form 1';
     const projectUrl = 'http://www.google.com';
     const questions = ['Test question 1', 'Test question 2', 'Test question 3'];
+    const overview = 'Test overview';
 
     const nameUpdated = 'Test form 2';
     const projectUrlUpdated = 'http://www.yahoo.com';
     const questionsUpdated = ['Test question 1 v2', 'Test question 2 v2', 'Test question 3 v2'];
+    const overviewUpdated = 'Test overview v2';
     const pendingRequests = 5;
 
     const versions = {
@@ -57,7 +59,7 @@ describe('Forms API', () => {
             return User.create(userData)
                 .then(user => {
                     for (let i = 0; i < 5; i++) {
-                        forms.push({ author: user._id, name, projectUrl, pendingRequests: i });
+                        forms.push({ author: user._id, name, projectUrl, pendingRequests: i, overview });
                     }
                     return Form.insertMany(forms)
                         .then(() => {
@@ -67,7 +69,7 @@ describe('Forms API', () => {
                                     expect(res).to.have.status(200);
                                     expect(res).to.be.json;
                                     expect(res.body).to.be.an('object');
-                                    expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                                    expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
                                     expect(res.body.form.pendingRequests).to.be.greaterThan(0);
                                 });
                         });
@@ -80,7 +82,7 @@ describe('Forms API', () => {
                 .then(user => {
                     author = user._id;
                     for (let i = 0; i < 5; i++) {
-                        forms.push({ author: user._id, name, projectUrl, pendingRequests: i });
+                        forms.push({ author: user._id, name, projectUrl, pendingRequests: i, overview });
                     }
                     return Form.insertMany(forms)
                         .then(() => {
@@ -148,7 +150,7 @@ describe('Forms API', () => {
                     userData.id = user.id;
                     // REMOVED WHILE ENDPOINT IS NOT PROTECTED, MAY REPLACE IN FUTURE
                     // token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             formId = form._id;
                             return chai.request(app)
@@ -160,10 +162,11 @@ describe('Forms API', () => {
                             expect(res).to.have.status(200);
                             expect(res).to.be.json;
                             expect(res.body).to.be.an('object');
-                            expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                            expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
                             expect(res.body.form._id).to.equal(String(formId));
                             expect(res.body.form.author).to.equal(author);
                             expect(res.body.form.name).to.equal(name);
+                            expect(res.body.form.overview).to.equal(overview);
                             expect(res.body.form.projectUrl).to.equal(projectUrl);
                             expect(res.body.form.versions[0]).to.include.keys('_id', 'questions', 'date');
                             expect(res.body.form.versions[0].questions).to.deep.equal(questions);
@@ -179,7 +182,7 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ projectUrl, questions })
+                .send({ projectUrl, questions, overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
@@ -193,12 +196,26 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ name, questions })
+                .send({ name, questions, overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
                     expect(res.body.message).to.equal('field missing');
                     expect(res.body.location).to.equal('projectUrl');
+                });
+        });
+        it('Should reject requests with missing overview', () => {
+
+            const token = createAuthToken(userData);
+            return chai.request(app)
+                .post('/api/forms')
+                .set('authorization', `Bearer ${token}`)
+                .send({ name, questions, projectUrl })
+                .then(res => {
+                    expect(res).to.have.status(422);
+                    expect(res.body.reason).to.equal('ValidationError');
+                    expect(res.body.message).to.equal('field missing');
+                    expect(res.body.location).to.equal('overview');
                 });
         });
         it('Should reject requests with missing questions', () => {
@@ -207,7 +224,7 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ name, projectUrl })
+                .send({ name, projectUrl, overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
@@ -221,12 +238,26 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ name: 1, projectUrl, questions })
+                .send({ name: 1, projectUrl, questions, overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
                     expect(res.body.message).to.equal('Incorrect field type: expected string');
                     expect(res.body.location).to.equal('name');
+                });
+        });
+        it('Should reject requests with non-string overview', () => {
+
+            const token = createAuthToken(userData);
+            return chai.request(app)
+                .post('/api/forms')
+                .set('authorization', `Bearer ${token}`)
+                .send({ name, projectUrl, questions, overview: 1 })
+                .then(res => {
+                    expect(res).to.have.status(422);
+                    expect(res.body.reason).to.equal('ValidationError');
+                    expect(res.body.message).to.equal('Incorrect field type: expected string');
+                    expect(res.body.location).to.equal('overview');
                 });
         });
         it('Should reject requests with non-string projectUrl', () => {
@@ -235,7 +266,7 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ name, projectUrl: 1, questions })
+                .send({ name, projectUrl: 1, questions, overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
@@ -249,7 +280,7 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ name, projectUrl, questions: 'questions' })
+                .send({ name, projectUrl, questions: 'questions', overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
@@ -263,7 +294,7 @@ describe('Forms API', () => {
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
-                .send({ name, projectUrl, questions: [1, 2, 3] })
+                .send({ name, projectUrl, questions: [1, 2, 3], overview })
                 .then(res => {
                     expect(res).to.have.status(422);
                     expect(res.body.reason).to.equal('ValidationError');
@@ -278,16 +309,17 @@ describe('Forms API', () => {
                     return chai.request(app)
                         .post('/api/forms')
                         .set('authorization', `Bearer ${token}`)
-                        .send({ name, projectUrl, questions })
+                        .send({ name, projectUrl, questions, overview })
                         .then(res => {
                             expect(res).to.have.status(201);
                             expect(res).to.be.json;
                             expect(res.body).to.be.an('object');
                             expect(res.body.id).to.equal(String(user._id));
                             const form = res.body.forms[0];
-                            expect(form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                            expect(form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
                             expect(form.name).to.equal(name);
                             expect(form.projectUrl).to.equal(projectUrl);
+                            expect(form.overview).to.equal(overview);
                             expect(form.versions[0]).to.include.keys('_id', 'questions', 'date');
                             expect(form.versions[0].questions).to.deep.equal(questions);
 
@@ -295,6 +327,7 @@ describe('Forms API', () => {
                         })
                         .then(form => {
                             expect(form.name).to.equal(name);
+                            expect(form.overview).to.equal(overview);
                             expect(form.projectUrl).to.equal(projectUrl);
                             expect(form.versions[0].questions).to.deep.equal(questions);
 
@@ -317,7 +350,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -345,7 +378,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -371,7 +404,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -389,6 +422,32 @@ describe('Forms API', () => {
                         });
                 })
         });
+        it('Should reject requests with non-string overview', () => {
+            let author;
+            let token;
+            return User.create(userData)
+                .then(user => {
+                    author = user.id;
+                    userData.id = user.id;
+                    token = createAuthToken(userData);
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
+                        .then((form) => {
+                            const formId = form._id;
+                            return chai.request(app)
+                                .patch(`/api/forms/${formId}`)
+                                .set('authorization', `Bearer ${token}`)
+                                .send({
+                                    overview: 1
+                                })
+                                .then(res => {
+                                    expect(res).to.have.status(422);
+                                    expect(res.body.reason).to.equal('ValidationError');
+                                    expect(res.body.message).to.equal('Incorrect field type: expected string');
+                                    expect(res.body.location).to.equal('overview');
+                                });
+                        });
+                })
+        });
         it('Should reject requests with non-array questions', () => {
 
             let author;
@@ -398,7 +457,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -425,7 +484,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -453,7 +512,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -482,7 +541,7 @@ describe('Forms API', () => {
                     author = ObjectId('000000000000');
                     userId = user.id;
                     token = createAuthToken({ ...userData, id: userId });
-                    return Form.create({ author, name, projectUrl, versions })
+                    return Form.create({ author, name, projectUrl, versions, overview })
                         .then((form) => {
                             const formId = form._id;
                             return chai.request(app)
@@ -507,7 +566,7 @@ describe('Forms API', () => {
                     return chai.request(app)
                         .post('/api/forms/')
                         .set('authorization', `Bearer ${token}`)
-                        .send({ name, projectUrl, questions })
+                        .send({ name, projectUrl, questions, overview })
                         .then(res => {
                             const formId = res.body.forms[0]._id;
                             return chai.request(app)
@@ -517,7 +576,8 @@ describe('Forms API', () => {
                                     name: nameUpdated,
                                     projectUrl: projectUrlUpdated,
                                     pendingRequests,
-                                    questions: questionsUpdated
+                                    questions: questionsUpdated,
+                                    overview: overviewUpdated
                                 })
                                 .then(res => {
                                     expect(res).to.have.status(200);
@@ -527,10 +587,11 @@ describe('Forms API', () => {
                                     expect(res.body.credit).to.equal(-pendingRequests);
 
                                     const form = res.body.forms[0];
-                                    expect(form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests');
+                                    expect(form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
                                     expect(form._id).to.equal(String(formId));
                                     expect(form.author).to.equal(author);
                                     expect(form.name).to.equal(nameUpdated);
+                                    expect(form.overview).to.equal(overviewUpdated);
                                     expect(form.projectUrl).to.equal(projectUrlUpdated);
                                     expect(form.versions[0]).to.include.keys('_id', 'questions', 'date');
                                     expect(form.versions[0].questions).to.deep.equal(questions);
@@ -542,6 +603,7 @@ describe('Forms API', () => {
                                 .then(form => {
                                     expect(form.name).to.equal(nameUpdated);
                                     expect(form.projectUrl).to.equal(projectUrlUpdated);
+                                    expect(form.overview).to.equal(overviewUpdated);
                                     expect(form.pendingRequests).to.equal(pendingRequests);
                                     expect(form.versions[1].questions).to.deep.equal(questionsUpdated);
                                 });
@@ -562,7 +624,7 @@ describe('Forms API', () => {
                     return chai.request(app)
                         .post('/api/forms')
                         .set('authorization', `Bearer ${token}`)
-                        .send({ name, projectUrl, questions })
+                        .send({ name, projectUrl, questions, overview })
                         .then(res => {
                             formId = res.body.forms[0]._id;
                             return User.findById(res.body.id)
@@ -594,7 +656,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             formId = form._id;
                             return chai.request(app)
@@ -619,7 +681,7 @@ describe('Forms API', () => {
                     author = user.id;
                     userData.id = user.id;
                     token = createAuthToken(userData);
-                    return Form.create({ author: ObjectId(author), name, projectUrl, versions })
+                    return Form.create({ author: ObjectId(author), name, projectUrl, versions, overview })
                         .then((form) => {
                             formId = form._id;
                             return chai.request(app)
