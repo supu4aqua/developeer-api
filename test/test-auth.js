@@ -18,6 +18,7 @@ describe('Auth API', () => {
     const password = 'examplePassword';
     const credit = 0;
     const forms = [];
+    const reviewsGiven = [];
     let id = '';
 
     before(() => {
@@ -86,7 +87,8 @@ describe('Auth API', () => {
                         id,
                         username,
                         credit,
-                        forms
+                        forms,
+                        reviewsGiven
                     });
                 });
         });

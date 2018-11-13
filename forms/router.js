@@ -277,6 +277,7 @@ router.delete('/:id', jwtAuth, (req, res) => {
         return res.status(401).json({ message });
     }
 
+    //TODO: consider whether to delete reviews associated with deleted form
     return Form.findByIdAndDelete(req.params.id)
         .then(form => {
             // remove form from user's forms

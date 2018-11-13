@@ -240,7 +240,6 @@ describe('Reviews API', () => {
                 })
                 .then(res => {
                     expect(res).to.have.status(204);
-
                     return Review.findOne();
                 })
                 .then(review => {
@@ -257,6 +256,7 @@ describe('Reviews API', () => {
             let userId;
             let formId;
             let formVersion;
+            let reviewId;
 
             return seedUser(reviewerUserData)
                 .then(reviewer => {
@@ -278,6 +278,7 @@ describe('Reviews API', () => {
                             expect(res.body.id).to.equal(String(reviewerId));
                             expect(res.body.credit).to.equal(1);
 
+                            reviewId = res.body.reviewsGiven[0];
                             return Form.findById(formId)
                         })
                         .then(form => {
@@ -286,6 +287,7 @@ describe('Reviews API', () => {
                             return Review.findOne();
                         })
                         .then(review => {
+                            expect(String(review._id)).to.equal(reviewId);
                             expect(review.responses).to.deep.equal(responses);
                             expect(String(review.formId)).to.equal(String(formId));
                             expect(String(review.formVersion)).to.equal(String(formVersion));

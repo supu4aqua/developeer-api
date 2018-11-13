@@ -193,7 +193,8 @@ describe('Users API', () => {
                         'id',
                         'username',
                         'credit',
-                        'forms'
+                        'forms',
+                        'reviewsGiven'
                     );
                     expect(res.body.username).to.equal(username);
                     expect(res.body.credit).to.equal(0);

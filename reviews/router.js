@@ -133,15 +133,17 @@ router.post('/', (req, res) => {
         ...reviewer
     }).then(review => {
         // if reviewer was a Devlopeer user, reduce pending requests on form,
-        // then add 1 credit to their account, return user
+        // then add 1 credit to their account and add review id to reviewsGiven, return user
         if (review.reviewerId) {
+            const reviewId = review._id
             Form.findByIdAndUpdate(
                 review.formId,
                 { $inc: { pendingRequests: -1 } }
             ).then(() => {
+                console.log(typeof reviewId)
                 return User.findByIdAndUpdate(
                     review.reviewerId,
-                    { $inc: { credit: 1 } },
+                    { $inc: { credit: 1 }, $push: { reviewsGiven: reviewId } },
                     { new: true }
                 )
             }).then(user => res.status(200).json(user.serialize()))

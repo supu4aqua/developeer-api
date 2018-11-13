@@ -58,7 +58,7 @@ describe('Forms API', () => {
         return tearDownDb();
     });
 
-    describe.only('GET /api/forms/toreview', () => {
+    describe('GET /api/forms/toreview', () => {
         it('Should return a form with pending requests', () => {
             const forms = [];
             return User.create(userData)
