@@ -41,6 +41,11 @@ describe('Forms API', () => {
         password: 'testpassword'
     };
 
+    const userData2 = {
+        username: 'testuser2',
+        password: 'testpassword'
+    };
+
     before(() => {
         return runServer(TEST_DATABASE_URL);
     });
@@ -53,7 +58,7 @@ describe('Forms API', () => {
         return tearDownDb();
     });
 
-    describe('GET /api/forms/toreview', () => {
+    describe.only('GET /api/forms/toreview', () => {
         it('Should return a form with pending requests', () => {
             const forms = [];
             return User.create(userData)
@@ -63,31 +68,38 @@ describe('Forms API', () => {
                     }
                     return Form.insertMany(forms)
                         .then(() => {
-                            return chai.request(app)
-                                .get(`/api/forms/toreview`)
-                                .then(res => {
-                                    expect(res).to.have.status(200);
-                                    expect(res).to.be.json;
-                                    expect(res.body).to.be.an('object');
-                                    expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
-                                    expect(res.body.form.pendingRequests).to.be.greaterThan(0);
+                            return User.create(userData2)
+                                .then(user => {
+                                    const token = createAuthToken(userData2);
+                                    return chai.request(app)
+                                        .get(`/api/forms/toreview`)
+                                        .set('authorization', `Bearer ${token}`)
+                                        .then(res => {
+                                            expect(res).to.have.status(200);
+                                            expect(res).to.be.json;
+                                            expect(res.body).to.be.an('object');
+                                            expect(res.body.form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
+                                            expect(res.body.form.pendingRequests).to.be.greaterThan(0);
+                                        });
                                 });
                         });
                 });
         });
-        it('Should not return form if author is req.query.userId', () => {
-            let author;
+        it('Should not return form if author is requesting user', () => {
+            let authorId;
             const forms = [];
             return User.create(userData)
                 .then(user => {
-                    author = user._id;
+                    authorId = user._id;
                     for (let i = 0; i < 5; i++) {
                         forms.push({ author: user._id, name, projectUrl, pendingRequests: i, overview });
                     }
                     return Form.insertMany(forms)
                         .then(() => {
+                            const token = createAuthToken({ ...userData, id: authorId });
                             return chai.request(app)
-                                .get(`/api/forms/toreview?userId=${author}`)
+                                .get(`/api/forms/toreview`)
+                                .set('authorization', `Bearer ${token}`)
                                 .then(res => {
                                     expect(res).to.have.status(404);
                                     expect(res.body.message).to.equal('No forms found');

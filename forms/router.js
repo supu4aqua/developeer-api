@@ -13,15 +13,14 @@ const { User } = require('../users/models');
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
 
-// retrieve random form 
-router.get('/toreview', (req, res) => {
-    // if userId is provided, use as negative filter to avoid reviewing own forms
-    const userId = req.query.userId ? ObjectId(req.query.userId) : null;
+// retrieve random form with pending requests
+router.get('/toreview', jwtAuth, (req, res) => {
+
     Form.aggregate([
         // filter by forms with pending requests
         { $match: { pendingRequests: { $gt: 0 } } },
         // then by forms NOT authored by the requesting user
-        { $match: { author: { $ne: userId } } },
+        { $match: { author: { $ne: ObjectId(req.user.id) } } },
         // and return a single random form
         { $sample: { size: 1 } }])
         .then(form => {
