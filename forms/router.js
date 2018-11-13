@@ -9,31 +9,39 @@ const ObjectId = mongoose.Types.ObjectId;
 
 const { Form } = require('./models');
 const { User } = require('../users/models');
+const { Review } = require('../reviews/models');
 
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
 
 // retrieve random form with pending requests
 router.get('/toreview', jwtAuth, (req, res) => {
+    console.log(req.user.reviewsGiven)
+    // get list of forms user has already reviewed
+    Review.find({ reviewerId: ObjectId(req.user.id) }, 'formId')
+        .then(reviews => {
+            const reviewedForms = reviews.map(review => review.formId);
+            Form.aggregate([
+                // filter by forms with pending requests
+                { $match: { pendingRequests: { $gt: 0 } } },
+                // then by forms not yet reviewed by requesting user
+                { $match: { _id: { $nin: reviewedForms } } },
+                // then by forms NOT authored by the requesting user
+                { $match: { author: { $ne: ObjectId(req.user.id) } } },
+                // and return a single random form
+                { $sample: { size: 1 } }])
+                .then(form => {
+                    if (form.length === 0) {
+                        return res.status(404).json({ message: 'No forms found' });
+                    }
+                    return res.status(200).json({ form: form[0] });
+                })
+                .catch(err => {
+                    console.error(err);
+                    return res.status(500).json({ message: 'Internal server error' });
 
-    Form.aggregate([
-        // filter by forms with pending requests
-        { $match: { pendingRequests: { $gt: 0 } } },
-        // then by forms NOT authored by the requesting user
-        { $match: { author: { $ne: ObjectId(req.user.id) } } },
-        // and return a single random form
-        { $sample: { size: 1 } }])
-        .then(form => {
-            if (form.length === 0) {
-                return res.status(404).json({ message: 'No forms found' });
-            }
-            return res.status(200).json({ form: form[0] });
-        })
-        .catch(err => {
-            console.error(err);
-            return res.status(500).json({ message: 'Internal server error' });
+                });
         });
-
 });
 
 // retrieve a form by id
