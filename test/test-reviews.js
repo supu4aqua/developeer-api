@@ -37,6 +37,7 @@ const reviewerUserData = {
 
 const responses = ['Test response 1', 'Test response 2', 'Test response 3'];
 const reviewerName = 'testreviewer';
+const isInternalReview = false;
 
 // seed a user to database
 const seedUser = (user) => {
@@ -236,7 +237,7 @@ describe('Reviews API', () => {
                     formVersion = form.versions[0]._id;
                     return chai.request(app)
                         .post('/api/reviews')
-                        .send({ formId, formVersion, responses, reviewerName })
+                        .send({ formId, formVersion, responses, reviewerName, isInternalReview })
                 })
                 .then(res => {
                     expect(res).to.have.status(204);
@@ -250,7 +251,7 @@ describe('Reviews API', () => {
                     expect(review.reviewerName).to.equal(reviewerName);
                 });
         });
-        it('Should create a new review with reviewerId provided', () => {
+        it('Should create a new review (internal) with reviewerId provided', () => {
 
             let reviewerId;
             let userId;
@@ -271,7 +272,7 @@ describe('Reviews API', () => {
                             formVersion = form.versions[0]._id;
                             return chai.request(app)
                                 .post('/api/reviews')
-                                .send({ formId, formVersion, responses, reviewerId })
+                                .send({ formId, formVersion, responses, reviewerId, isInternalReview: true })
                         })
                         .then(res => {
                             expect(res).to.have.status(200);
@@ -283,6 +284,51 @@ describe('Reviews API', () => {
                         })
                         .then(form => {
                             expect(form.pendingRequests).to.equal(-1);
+
+                            return Review.findOne();
+                        })
+                        .then(review => {
+                            expect(String(review._id)).to.equal(reviewId);
+                            expect(review.responses).to.deep.equal(responses);
+                            expect(String(review.formId)).to.equal(String(formId));
+                            expect(String(review.formVersion)).to.equal(String(formVersion));
+                            expect(String(review.reviewerId)).to.equal(String(reviewerId));
+                        });
+                });
+        });
+        it('Should create a new review (external) with reviewerId provided', () => {
+
+            let reviewerId;
+            let userId;
+            let formId;
+            let formVersion;
+            let reviewId;
+
+            return seedUser(reviewerUserData)
+                .then(reviewer => {
+                    reviewerId = reviewer._id;
+                    return seedUser(userData)
+                        .then(user => {
+                            userId = user._id;
+                            return seedForm({ ...testForm, author: userId });
+                        })
+                        .then(form => {
+                            formId = form._id;
+                            formVersion = form.versions[0]._id;
+                            return chai.request(app)
+                                .post('/api/reviews')
+                                .send({ formId, formVersion, responses, reviewerId, isInternalReview })
+                        })
+                        .then(res => {
+                            expect(res).to.have.status(200);
+                            expect(res.body.id).to.equal(String(reviewerId));
+                            expect(res.body.credit).to.equal(0);
+
+                            reviewId = res.body.reviewsGiven[0];
+                            return Form.findById(formId)
+                        })
+                        .then(form => {
+                            expect(form.pendingRequests).to.equal(0);
 
                             return Review.findOne();
                         })
@@ -307,7 +353,7 @@ describe('Reviews API', () => {
                     formVersion = form.versions[0]._id;
                     return chai.request(app)
                         .post('/api/reviews')
-                        .send({ formVersion, responses, reviewerName })
+                        .send({ formVersion, responses, reviewerName, isInternalReview })
                 })
                 .then(res => {
                     expect(res).to.have.status(422);
@@ -316,7 +362,30 @@ describe('Reviews API', () => {
                     expect(res.body.location).to.equal('formId');
                 });
         });
-        it('Should create reject requests with missing versionId', () => {
+        it('Should reject requests with missing isInternalReview', () => {
+            let userId;
+            let formVersion;
+            let formId;
+            return seedUser(userData)
+                .then(user => {
+                    userId = user._id;
+                    return seedForm({ ...testForm, author: userId });
+                })
+                .then(form => {
+                    formVersion = form.versions[0]._id;
+                    formId = form._id;
+                    return chai.request(app)
+                        .post('/api/reviews')
+                        .send({ formId, formVersion, responses, reviewerName })
+                })
+                .then(res => {
+                    expect(res).to.have.status(422);
+                    expect(res.body.reason).to.equal('ValidationError');
+                    expect(res.body.message).to.equal('field missing');
+                    expect(res.body.location).to.equal('isInternalReview');
+                });
+        });
+        it('Should reject requests with missing formVersion', () => {
             let userId;
             let formId;
             return seedUser(userData)
@@ -328,7 +397,7 @@ describe('Reviews API', () => {
                     formId = form._id;
                     return chai.request(app)
                         .post('/api/reviews')
-                        .send({ formId, responses, reviewerName })
+                        .send({ formId, responses, reviewerName, isInternalReview })
                 })
                 .then(res => {
                     expect(res).to.have.status(422);
@@ -337,7 +406,7 @@ describe('Reviews API', () => {
                     expect(res.body.location).to.equal('formVersion');
                 });
         });
-        it('Should create reject requests with missing reviewerName and reviewerId', () => {
+        it('Should reject requests with missing reviewerName and reviewerId', () => {
             let userId;
             let formId;
             let formVersion;
@@ -351,7 +420,7 @@ describe('Reviews API', () => {
                     formVersion = form.versions[0]._id;
                     return chai.request(app)
                         .post('/api/reviews')
-                        .send({ formId, formVersion, responses })
+                        .send({ formId, formVersion, responses, isInternalReview })
                 })
                 .then(res => {
                     expect(res).to.have.status(422);
@@ -374,7 +443,7 @@ describe('Reviews API', () => {
                     formVersion = form.versions[0]._id;
                     return chai.request(app)
                         .post('/api/reviews')
-                        .send({ formId, formVersion, responses: 'responses', reviewerName })
+                        .send({ formId, formVersion, responses: 'responses', reviewerName, isInternalReview })
                 })
                 .then(res => {
                     expect(res).to.have.status(422);

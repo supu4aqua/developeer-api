@@ -79,7 +79,7 @@ router.get('/byForm/:formId', jwtAuth, (req, res) => {
 
 // create a new review
 router.post('/', (req, res) => {
-    const requiredFields = ['formId', 'formVersion', 'responses'];
+    const requiredFields = ['formId', 'formVersion', 'responses', 'isInternalReview'];
     const missingField = requiredFields.find(field => !(field in req.body));
     if (missingField) {
         return res.status(422).json({
@@ -132,21 +132,32 @@ router.post('/', (req, res) => {
         responses: [...req.body.responses],
         ...reviewer
     }).then(review => {
-        // if reviewer was a Devlopeer user, reduce pending requests on form,
-        // then add 1 credit to their account and add review id to reviewsGiven, return user
-        if (review.reviewerId) {
-            const reviewId = review._id
+
+        if (review.reviewerId && !req.body.isInternalReview) {
+            // if reviewer is a Devlopeer user but review is external add review id to reviewsGiven,
+            // and return the updated user
+            return User.findByIdAndUpdate(
+                review.reviewerId,
+                { $push: { reviewsGiven: review._id } },
+                { new: true }
+            )
+                .then(user => res.status(200).json(user.serialize()));
+
+        } else if (review.reviewerId && req.body.isInternalReview) {
+            // if reviewer is a Devlopeer user AND this is an internal review, 
+            // reduce pending requests on form, add 1 credit to user account, return user
             Form.findByIdAndUpdate(
                 review.formId,
                 { $inc: { pendingRequests: -1 } }
-            ).then(() => {
-                console.log(typeof reviewId)
-                return User.findByIdAndUpdate(
-                    review.reviewerId,
-                    { $inc: { credit: 1 }, $push: { reviewsGiven: reviewId } },
-                    { new: true }
-                )
-            }).then(user => res.status(200).json(user.serialize()))
+            )
+                .then(() => {
+                    return User.findByIdAndUpdate(
+                        review.reviewerId,
+                        { $inc: { credit: 1 }, $push: { reviewsGiven: review._id } },
+                        { new: true }
+                    )
+                })
+                .then(user => res.status(200).json(user.serialize()))
         } else {
             // if not a developeer user, send success w/o content
             res.status(204).end()
