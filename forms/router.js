@@ -125,7 +125,6 @@ router.post('/', jwtAuth, (req, res) => {
         name: req.body.name,
         projectUrl: req.body.projectUrl,
         overview: req.body.overview,
-        // shareableUrl: '', // TODO: generate shareable urls
         versions: {
             questions: [...req.body.questions]
         }
@@ -150,7 +149,7 @@ router.post('/', jwtAuth, (req, res) => {
 // update a form
 router.patch('/:id', jwtAuth, (req, res) => {
     // check for required fields
-    // note: `id`, `author`, `created`, and `shareableUrl` cannot be updated
+    // note: `id`, `author`, `created`, cannot be updated
     const allowedFields = ['name', 'projectUrl', 'pendingRequests', 'questions', 'overview'];
     const illegalField = Object.keys(req.body).find(field => !(allowedFields.includes(field)));
 

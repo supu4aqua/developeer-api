@@ -13,7 +13,6 @@ const FormSchema = mongoose.Schema({
     name: { type: String, required: true },
     created: { type: Date, default: new Date() },
     projectUrl: { type: String, required: true },
-    shareableUrl: { type: String }, // TODO: autogenerate this link,
     overview: { type: String, required: true },
     pendingRequests: { type: Number, default: 0 },
     versions: [VersionSchema]
