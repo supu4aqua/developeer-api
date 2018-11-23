@@ -1,7 +1,5 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const faker = require('faker');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
@@ -11,9 +9,8 @@ chai.use(chaiHttp);
 
 // import models, server, and configuration variables
 const { User } = require('../users/models');
-const { createAuthToken } = require('../auth/createAuthToken');
 const { app, runServer, closeServer } = require('../server');
-const { TEST_DATABASE_URL, JWT_SECRET, JWT_EXPIRY } = require('../config');
+const { TEST_DATABASE_URL } = require('../config');
 
 // clear test database
 const tearDownDb = () => {
