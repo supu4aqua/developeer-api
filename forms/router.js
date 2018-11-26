@@ -16,7 +16,6 @@ const jwtAuth = passport.authenticate('jwt', { session: false });
 
 // retrieve random form with pending requests
 router.get('/toreview', jwtAuth, (req, res) => {
-    console.log(req.user.reviewsGiven)
     // get list of forms user has already reviewed
     Review.find({ reviewerId: ObjectId(req.user.id) }, 'formId')
         .then(reviews => {
@@ -243,7 +242,7 @@ router.patch('/:id', jwtAuth, (req, res) => {
                     { $inc: { credit: changeCredit } },
                     { new: true }
                 ).catch(err => {
-                    console.log(err);
+                    console.error(err);
                     return res.status(500).json({ message: 'internal server error' });
                 });
             } else {
@@ -284,7 +283,6 @@ router.delete('/:id', jwtAuth, (req, res) => {
         return res.status(401).json({ message });
     }
 
-    //TODO: consider whether to delete reviews associated with deleted form
     return Form.findByIdAndDelete(req.params.id)
         .then(form => {
             // remove form from user's forms
@@ -295,12 +293,12 @@ router.delete('/:id', jwtAuth, (req, res) => {
             ).then(user => {
                 return res.status(200).json(user.serialize());
             }).catch(err => {
-                console.log(err);
+                console.error(err);
                 return res.status(500).json({ message: 'internal server error' });
             });
         })
         .catch(err => {
-            console.log(err);
+            console.error(err);
             return res.status(500).json({ message: 'internal server error' });
         });
 

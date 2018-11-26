@@ -24,7 +24,6 @@ router.get('/:id', jwtAuth, (req, res) => {
                 console.error('Review not found');
                 return res.status(404).json({ message: 'Review not found' });
             }
-            console.log(review)
             return Form.findById(review.formId)
                 .then(form => {
                     // check if req.user.id is the same as the form author id
@@ -62,7 +61,6 @@ router.get('/byForm/:formId', jwtAuth, (req, res) => {
             return Review.find({ formId: req.params.formId })
         })
         .then(reviews => {
-            console.log('reviews');
             res.status(200).json({ reviews })
         })
         .catch(err => {
