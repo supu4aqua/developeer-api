@@ -19,7 +19,7 @@ const jwtAuth = passport.authenticate('jwt', { session: false });
 
 // The user provides a valid JWT to login (and receive a new JWT)
 router.post('/loginjwt', jwtAuth, (req, res) => {
-    const authToken = createAuthToken(req.user);
+    const authToken = createAuthToken(req.user.serialize());
     res.status(200).json({ authToken });
 });
 

@@ -48,7 +48,20 @@ const jwtStrategy = new JwtStrategy({
     algorithms: ['HS256']
 },
     (payload, done) => {
-        done(null, payload.user);
+        User.findById(payload.user.id)
+            .then(user => {
+                if (!user) {
+                    return Promise.reject({
+                        reason: 'LoginError',
+                        message: 'User not found'
+                    });
+                }
+                done(null, user);
+            })
+            .catch(err => {
+                console.error(err);
+                return done(null, false, err);
+            });
     }
 );
 

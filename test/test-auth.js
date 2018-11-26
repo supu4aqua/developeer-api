@@ -144,7 +144,12 @@ describe('Auth API', () => {
 
         it('Should return a valid auth token with a newer expiry date', () => {
             const token = jwt.sign(
-                { user: { username } },
+                {
+                    user: {
+                        username,
+                        id
+                    }
+                },
                 JWT_SECRET,
                 {
                     algorithm: 'HS256',
@@ -166,7 +171,10 @@ describe('Auth API', () => {
                     const payload = jwt.verify(token, JWT_SECRET, {
                         algorithm: ['HS256']
                     });
-                    expect(payload.user).to.deep.equal({ username });
+                    expect(payload.user.username).to.equal(username);
+                    expect(payload.user.credit).to.equal(0);
+                    expect(payload.user.forms).to.deep.equal([]);
+                    expect(payload.user.reviewsGiven).to.deep.equal([]);
                     expect(payload.exp).to.be.at.least(decoded.exp);
                 });
         });

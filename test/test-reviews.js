@@ -109,10 +109,12 @@ describe('Reviews API', () => {
             let reviewId;
             let token;
             let author;
+            let userId;
             return seedUser(userData)
                 .then(user => {
-                    token = createAuthToken({ ...userData, id: '000000000000' });
-                    author = user._id;
+                    userId = user._id;
+                    token = createAuthToken({ ...userData, id: user._id });
+                    author = ObjectId('000000000000');
                     return seedForm({ ...testForm, author });
                 })
                 .then(form => {
@@ -127,21 +129,24 @@ describe('Reviews API', () => {
                         .set('authorization', `Bearer ${token}`)
                         .then(res => {
                             expect(res).to.have.status(401);
-                            expect(res.body.message).to.equal(`Form author id (${author}) and JWT payload user id (000000000000) must match`);
+                            expect(res.body.message).to.equal(`Form author id (${author}) and JWT payload user id (${userId}) must match`);
                         });
                 });
         });
 
         it('Should reject requests if review id not found in database', () => {
-            const token = createAuthToken(userData);
-            return chai.request(app)
-                .get(`/api/reviews/000000000000`)
-                .set('authorization', `Bearer ${token}`)
-                .then(res => {
-                    expect(res).to.have.status(404);
-                    expect(res).to.be.json;
-                    expect(res.body).to.be.an('object');
-                    expect(res.body.message).to.equal('Review not found');
+            return seedUser(userData)
+                .then(user => {
+                    const token = createAuthToken({ ...userData, id: user._id });
+                    return chai.request(app)
+                        .get(`/api/reviews/000000000000`)
+                        .set('authorization', `Bearer ${token}`)
+                        .then(res => {
+                            expect(res).to.have.status(404);
+                            expect(res).to.be.json;
+                            expect(res.body).to.be.an('object');
+                            expect(res.body.message).to.equal('Review not found');
+                        });
                 });
         });
     });
@@ -186,10 +191,12 @@ describe('Reviews API', () => {
             let formVersion;
             let token;
             let author;
+            let userId;
             return seedUser(userData)
                 .then(user => {
-                    token = createAuthToken({ ...userData, id: '000000000000' });
-                    author = user._id;
+                    userId = user._id;
+                    token = createAuthToken({ ...userData, id: user._id });
+                    author = ObjectId('000000000000');
                     return seedForm({ ...testForm, author });
                 })
                 .then(form => {
@@ -203,20 +210,23 @@ describe('Reviews API', () => {
                         .set('authorization', `Bearer ${token}`)
                         .then(res => {
                             expect(res).to.have.status(401);
-                            expect(res.body.message).to.equal(`Unauthorized: Form author id (${author}) and JWT payload user id (000000000000) must match`);
+                            expect(res.body.message).to.equal(`Unauthorized: Form author id (${author}) and JWT payload user id (${userId}) must match`);
                         });
                 });
         });
         it('Should reject requests if form id not found in database', () => {
-            const token = createAuthToken(userData);
-            return chai.request(app)
-                .get(`/api/reviews/byForm/000000000000`)
-                .set('authorization', `Bearer ${token}`)
-                .then(res => {
-                    expect(res).to.have.status(404);
-                    expect(res).to.be.json;
-                    expect(res.body).to.be.an('object');
-                    expect(res.body.message).to.equal('Form not found');
+            return seedUser(userData)
+                .then(user => {
+                    token = createAuthToken({ ...userData, id: user._id });
+                    return chai.request(app)
+                        .get(`/api/reviews/byForm/000000000000`)
+                        .set('authorization', `Bearer ${token}`)
+                        .then(res => {
+                            expect(res).to.have.status(404);
+                            expect(res).to.be.json;
+                            expect(res.body).to.be.an('object');
+                            expect(res.body.message).to.equal('Form not found');
+                        });
                 });
         });
 

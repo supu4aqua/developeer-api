@@ -70,7 +70,7 @@ describe('Forms API', () => {
                         .then(() => {
                             return User.create(userData2)
                                 .then(user => {
-                                    const token = createAuthToken(userData2);
+                                    const token = createAuthToken({ ...userData2, id: user._id });
                                     return chai.request(app)
                                         .get(`/api/forms/toreview`)
                                         .set('authorization', `Bearer ${token}`)
@@ -188,9 +188,19 @@ describe('Forms API', () => {
     });
 
     describe('POST /api/forms', () => {
-        it('Should reject requests with missing name', () => {
+        let id = '';
 
-            const token = createAuthToken(userData);
+        beforeEach(function () {
+            return User.hashPassword(userData.password).then(password => {
+                return User.create({
+                    username: userData.username,
+                    password
+                });
+            }).then(user => id = user.id);
+        });
+
+        it('Should reject requests with missing name', () => {
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -204,7 +214,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with missing projectUrl', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -218,7 +228,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with missing overview', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -232,7 +242,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with missing questions', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -246,7 +256,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with non-string name', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -260,7 +270,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with non-string overview', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -274,7 +284,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with non-string projectUrl', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -288,7 +298,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with non-array questions', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -302,7 +312,7 @@ describe('Forms API', () => {
         });
         it('Should reject requests with array of non-string questions', () => {
 
-            const token = createAuthToken(userData);
+            const token = createAuthToken({ ...userData, id });
             return chai.request(app)
                 .post('/api/forms')
                 .set('authorization', `Bearer ${token}`)
@@ -315,45 +325,41 @@ describe('Forms API', () => {
                 });
         });
         it('Should create a new form', () => {
-            return User.create(userData)
-                .then(user => {
-                    const token = createAuthToken({ ...userData, id: user._id });
-                    return chai.request(app)
-                        .post('/api/forms')
-                        .set('authorization', `Bearer ${token}`)
-                        .send({ name, projectUrl, questions, overview })
-                        .then(res => {
-                            expect(res).to.have.status(201);
-                            expect(res).to.be.json;
-                            expect(res.body).to.be.an('object');
-                            expect(res.body.id).to.equal(String(user._id));
-                            const form = res.body.forms[0];
-                            expect(form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
-                            expect(form.name).to.equal(name);
-                            expect(form.projectUrl).to.equal(projectUrl);
-                            expect(form.overview).to.equal(overview);
-                            expect(form.versions[0]).to.include.keys('_id', 'questions', 'date');
-                            expect(form.versions[0].questions).to.deep.equal(questions);
+            const token = createAuthToken({ ...userData, id });
+            return chai.request(app)
+                .post('/api/forms')
+                .set('authorization', `Bearer ${token}`)
+                .send({ name, projectUrl, questions, overview })
+                .then(res => {
+                    expect(res).to.have.status(201);
+                    expect(res).to.be.json;
+                    expect(res.body).to.be.an('object');
+                    expect(res.body.id).to.equal(id);
+                    const form = res.body.forms[0];
+                    expect(form).to.include.keys('_id', 'author', 'name', 'projectUrl', 'versions', 'created', 'pendingRequests', 'overview');
+                    expect(form.name).to.equal(name);
+                    expect(form.projectUrl).to.equal(projectUrl);
+                    expect(form.overview).to.equal(overview);
+                    expect(form.versions[0]).to.include.keys('_id', 'questions', 'date');
+                    expect(form.versions[0].questions).to.deep.equal(questions);
 
-                            return Form.findById(form._id);
-                        })
-                        .then(form => {
-                            expect(form.name).to.equal(name);
-                            expect(form.overview).to.equal(overview);
-                            expect(form.projectUrl).to.equal(projectUrl);
-                            expect(form.versions[0].questions).to.deep.equal(questions);
+                    return Form.findById(form._id);
+                })
+                .then(form => {
+                    expect(form.name).to.equal(name);
+                    expect(form.overview).to.equal(overview);
+                    expect(form.projectUrl).to.equal(projectUrl);
+                    expect(form.versions[0].questions).to.deep.equal(questions);
 
-                            formId = form._id;
-                            return User.findById(form.author);
-                        }).then(user => {
-                            expect(user.forms[0]._id).to.deep.equal(formId);
-                        });
+                    formId = form._id;
+                    return User.findById(form.author);
+                }).then(user => {
+                    expect(user.forms[0]._id).to.deep.equal(formId);
                 });
         });
     });
 
     describe('PATCH /api/forms/:id', () => {
-
         it('Should reject requests with illegal fields', () => {
             let author;
             let token;
