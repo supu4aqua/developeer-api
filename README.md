@@ -114,8 +114,7 @@ Feedback is an essential part of any development project. Whether it's identifyi
     ```
 * Successful responses (201) will return serialized user data
 
-
-
+___
 
 ### auth
 * The auth endpoint is used to obtain or refresh a JWT (authentication token)
@@ -133,8 +132,7 @@ Feedback is an essential part of any development project. Whether it's identifyi
 * Successful response (200) will contain a JWT (authentication token) with serialized user data in the payload
 * Invalid credentials will result in 401 response
 
-
-
+___
 
 ### forms
 * The forms endpoint is used to create, read, update, and delete feedback forms
@@ -220,7 +218,7 @@ Feedback is an essential part of any development project. Whether it's identifyi
     ```
 * A successful response (200) will return the updated **user** object (with the deleted form removed)
 
-
+___
 
 ### reviews
 * The reviews endpoint is used to create and read reviews (form responses)
