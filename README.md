@@ -6,11 +6,28 @@ Where developers give and receive feedback on their coding projects
 
 [![Build Status](https://www.travis-ci.com/fastlain/developeer-api.svg?branch=master)](https://www.travis-ci.com/fastlain/developeer-api)
 
-This repo contains the server-side API built with Node/Express/Mongo(ose). Looking for the front-end DeveloPeer Client? **[Click Here](https://github.com/fastlain/developeer-client)**
+This repo contains the server-side API built with Node/Express/Mongo(ose). Looking for the front-end DeveloPeer Client? 
+**[Click Here](https://github.com/fastlain/developeer-client)**
 
 ## Introduction
 
 Feedback is an essential part of any development project. Whether it's identifying bugs, revealing UX issues, or finding typos, constructive criticism can improve your app at any point in the process. But finding reviewers and managing forms can be challenging. DeveloPeer was built to remove these barriers by providing a platform where developers can exchange feedback easily and equitably.
+
+## Technology
+
+### Back End
+* [Node](https://nodejs.org/en/) and [Express](https://expressjs.com/)
+    * [Passport](http://www.passportjs.org/) authentication (using JWTs)
+    * [Mocha](https://mochajs.org/) test framework and [Chai](http://www.chaijs.com/) assertion library
+    * [Mongoose](http://mongoosejs.com/) for MongoDB object modeling
+* [MongoDB](https://www.mongodb.com/)
+    * NoSQL (document-based) database
+    * Hosted on the cloud with [mLab](https://mlab.com/)
+
+### Production
+* [Travis](https://travis-ci.org/) Continuous Integration
+* [Heroku](https://www.heroku.com/) Cloud Application Platform
+
 
 ## Run DeveloPeer API in a local development environment
 
@@ -28,31 +45,15 @@ Feedback is an essential part of any development project. Whether it's identifyi
     * `cd developeer-api/`
 * Run `npm install`
 
-## Run Program
-* Start MongoDB local server
-    * `mongod`
+### Run Program
+* Start MongoDB local server: `mongod`
 * Run `npm start` (or `npm run dev` to run with nodemon which auto-restarts on save changes)
-* In browser, navigate to `localhost:8080` or your specified port
+* Make requests using the root: `localhost:8080` or your specified port
 
-## Test
+### Test
 * Start MongoDB local server
     * `mongod`
 * Run `npm test`
-
-## Technology
-
-### Back End
-* [Node](https://nodejs.org/en/) and [Express](https://expressjs.com/)
-    * [Passport](http://www.passportjs.org/) authentication (using JWTs)
-    * [Mocha](https://mochajs.org/) test framework and [Chai](http://www.chaijs.com/) assertion library
-    * [Mongoose](http://mongoosejs.com/) for MongoDB object modeling
-* [MongoDB](https://www.mongodb.com/)
-    * NoSQL (document-based) database
-    * Hosted on the cloud with [mLab](https://mlab.com/)
-
-### Production
-* [Travis](https://travis-ci.org/) Continuous Integration
-* [Heroku](https://www.heroku.com/) Cloud Application Platform
 
 
 ## API Overview
@@ -113,6 +114,9 @@ Feedback is an essential part of any development project. Whether it's identifyi
     ```
 * Successful responses (201) will return serialized user data
 
+
+
+
 ### auth
 * The auth endpoint is used to obtain or refresh a JWT (authentication token)
 
@@ -128,6 +132,9 @@ Feedback is an essential part of any development project. Whether it's identifyi
 * The JWT payload must contain a user object with an id which is verified to be in MongoDB
 * Successful response (200) will contain a JWT (authentication token) with serialized user data in the payload
 * Invalid credentials will result in 401 response
+
+
+
 
 ### forms
 * The forms endpoint is used to create, read, update, and delete feedback forms
@@ -212,6 +219,7 @@ Feedback is an essential part of any development project. Whether it's identifyi
     }
     ```
 * A successful response (200) will return the updated **user** object (with the deleted form removed)
+
 
 
 ### reviews
